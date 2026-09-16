@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>코딩수학부 웹 아케이드 (Math Arcade)</title>
+  <style>
+    :root {
+      --primary: #3182ce;
+      --primary-hover: #2b6cb0;
+      --bg-color: #f8fafc;
+      --card-bg: #ffffff;
+      --text-main: #1e293b;
+      --text-sub: #64748b;
+      --border-color: #e2e8f0;
+      --accent: #ebf8ff;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Pretendard", "Segoe UI", Roboto, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      line-height: 1.6;
+      padding-bottom: 60px;
+    }
+
+    /* 헤더 영역 */
+    header {
+      background: #ffffff;
+      border-bottom: 1px solid var(--border-color);
+      padding: 40px 20px;
+      text-align: center;
+    }
+
+    header h1 {
+      font-size: 2.2rem;
+      font-weight: 800;
+      color: #0f172a;
+      margin-bottom: 8px;
+    }
+
+    header p {
+      color: var(--text-sub);
+      font-size: 1.05rem;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    /* 탐색 및 필터 컨테이너 */
+    .filter-container {
+      max-width: 1200px;
+      margin: 30px auto 20px;
+      padding: 0 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 15px;
+    }
+
+    .category-tabs {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .tab-btn {
+      background: #ffffff;
+      border: 1px solid var(--border-color);
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      color: var(--text-sub);
+    }
+
+    .tab-btn:hover {
+      background: var(--accent);
+      color: var(--primary);
+    }
+
+    .tab-btn.active {
+      background: var(--primary);
+      color: #ffffff;
+      border-color: var(--primary);
+    }
+
+    .search-box input {
+      padding: 8px 16px;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      font-size: 0.95rem;
+      width: 240px;
+      outline: none;
+    }
+
+    .search-box input:focus {
+      border-color: var(--primary);
+    }
+
+    /* 게임 카드 그리드 */
+    .arcade-grid {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 20px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: 25px;
+    }
+
+    .game-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .game-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
+
+    .card-banner {
+      height: 140px;
+      background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3.5rem;
+      user-select: none;
+    }
+
+    .card-content {
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 8px;
+    }
+
+    .card-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #0f172a;
+    }
+
+    .card-author {
+      font-size: 0.85rem;
+      color: var(--text-sub);
+    }
+
+    .card-desc {
+      font-size: 0.92rem;
+      color: #475569;
+      margin-bottom: 16px;
+      flex-grow: 1;
+    }
+
+    .tag-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 20px;
+    }
+
+    .math-tag {
+      background: #f1f5f9;
+      color: #475569;
+      font-size: 0.78rem;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 4px;
+    }
+
+    .card-actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    .btn-play {
+      flex: 1;
+      padding: 10px;
+      background: var(--primary);
+      color: white;
+      text-align: center;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .btn-play:hover {
+      background: var(--primary-hover);
+    }
+
+    .btn-external {
+      padding: 10px 14px;
+      background: #f1f5f9;
+      color: var(--text-main);
+      text-decoration: none;
+      border-radius: 6px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .btn-external:hover {
+      background: #e2e8f0;
+    }
+
+    /* 게임 플레이 모달 */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.75);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      padding: 20px;
+    }
+
+    .modal-backdrop.active {
+      display: flex;
+    }
+
+    .modal-window {
+      background: #ffffff;
+      width: 100%;
+      max-width: 900px;
+      height: 640px;
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    }
+
+    .modal-header {
+      padding: 12px 20px;
+      background: #ffffff;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-title {
+      font-weight: 700;
+      font-size: 1.1rem;
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      line-height: 1;
+      cursor: pointer;
+      color: var(--text-sub);
+    }
+
+    .modal-body {
+      flex: 1;
+      background: #000;
+    }
+
+    .modal-body iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>📐 Coding Math Arcade</h1>
+    <p>수학적 원리와 알고리즘을 결합하여 제작한 인터랙티브 학습 게임 아카이브입니다.</p>
+  </header>
+
+  <div class="filter-container">
+    <div class="category-tabs" id="categoryTabs">
+      <button class="tab-btn active" data-category="all">전체보기</button>
+      <button class="tab-btn" data-category="algebra">대수/해석</button>
+      <button class="tab-btn" data-category="geometry">기하/벡터</button>
+      <button class="tab-btn" data-category="number-theory">정수론/이산수학</button>
+    </div>
+
+    <div class="search-box">
+      <input type="text" id="searchInput" placeholder="게임명 또는 수학 개념 검색..." />
+    </div>
+  </div>
+
+  <main class="arcade-grid" id="arcadeGrid"></main>
+
+  <!-- 게임 모달 레이어 -->
+  <div class="modal-backdrop" id="gameModal">
+    <div class="modal-window">
+      <div class="modal-header">
+        <span class="modal-title" id="modalTitle">게임 타이틀</span>
+        <button class="modal-close" id="modalCloseBtn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <iframe id="gameIframe" src="" allow="autoplay"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /**
+     * 조원들의 게임 목록 데이터
+     * 새 게임 추가 시 이 배열에 객체 하나만 추가하면 됩니다.
+     */
+    const GAMES_DATA = [
+      {
+        id: "projectile-math",
+        title: "이차함수 포격전",
+        author: "1조",
+        category: "algebra",
+        icon: "🎯",
+        desc: "이차함수의 곡률(a)과 기울기(b)를 직접 계산/조정하여 장애물을 넘겨 타깃을 타격하는 탄도학 게임입니다.",
+        tags: ["#이차함수", "#포물선", "#순간변화율"],
+        path: "./games/projectile-math/index.html"
+      },
+      {
+        id: "vector-flight",
+        title: "벡터 항법사 (Vector Flight)",
+        author: "2조",
+        category: "geometry",
+        icon: "✈️",
+        desc: "바람의 풍향 벡터와 항공기 추진 벡터의 덧셈 연산을 통해 목표 공항 활주로에 정밀 착륙하세요.",
+        tags: ["#평면벡터", "#벡터의합", "#삼각비"],
+        path: "./games/vector-flight/index.html"
+      },
+      {
+        id: "prime-defense",
+        title: "소수 타워 디펜스",
+        author: "3조",
+        category: "number-theory",
+        icon: "🛡️",
+        desc: "침공해오는 합성수 몬스터를 소인수분해 포탑으로 격파하여 기지를 방어하는 정수론 게임입니다.",
+        tags: ["#소수", "#에라토스테네스의체", "#소인수분해"],
+        path: "./games/prime-defense/index.html"
+      },
+      {
+        id: "calculus-rollercoaster",
+        title: "미분 롤러코스터",
+        author: "4조",
+        category: "algebra",
+        icon: "🎢",
+        desc: "곡선 트랙의 순간변화율(접선의 기울기)을 실시간으로 계산해 열차 탈선을 방지하는 러닝 액션 게임입니다.",
+        tags: ["#도함수", "#접선의기울기", "#극값"],
+        path: "./games/calculus-rollercoaster/index.html"
+      }
+    ];
+
+    const grid = document.getElementById("arcadeGrid");
+    const categoryTabs = document.getElementById("categoryTabs");
+    const searchInput = document.getElementById("searchInput");
+
+    const modal = document.getElementById("gameModal");
+    const modalTitle = document.getElementById("modalTitle");
+    const gameIframe = document.getElementById("gameIframe");
+    const modalCloseBtn = document.getElementById("modalCloseBtn");
+
+    let currentCategory = "all";
+    let searchQuery = "";
+
+    // 게임 카드 렌더링
+    function renderGames() {
+      grid.innerHTML = "";
+
+      const filtered = GAMES_DATA.filter((game) => {
+        const matchCategory = currentCategory === "all" || game.category === currentCategory;
+        const matchSearch =
+          game.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          game.desc.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          game.tags.some(t => t.toLowerCase().includes(searchQuery.toLowerCase()));
+        return matchCategory && matchSearch;
+      });
+
+      if (filtered.length === 0) {
+        grid.innerHTML = `<p style="grid-column: 1/-1; text-align: center; color: #94a3b8; padding: 40px 0;">조건에 맞는 게임이 없습니다.</p>`;
+        return;
+      }
+
+      filtered.forEach((game) => {
+        const card = document.createElement("div");
+        card.className = "game-card";
+
+        const tagsHtml = game.tags.map(t => `<span class="math-tag">${t}</span>`).join("");
+
+        card.innerHTML = `
+          <div class="card-banner">${game.icon}</div>
+          <div class="card-content">
+            <div class="card-header">
+              <h3 class="card-title">${game.title}</h3>
+              <span class="card-author">${game.author}</span>
+            </div>
+            <p class="card-desc">${game.desc}</p>
+            <div class="tag-container">${tagsHtml}</div>
+            <div class="card-actions">
+              <button class="btn-play" onclick="openGameModal('${game.title}', '${game.path}')">플레이하기</button>
+              <a href="${game.path}" target="_blank" class="btn-external" title="새 창에서 열기">↗</a>
+            </div>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    // 모달 제어 함수
+    window.openGameModal = function(title, path) {
+      modalTitle.textContent = title;
+      gameIframe.src = path;
+      modal.classList.add("active");
+    };
+
+    function closeModal() {
+      modal.classList.remove("active");
+      gameIframe.src = ""; // 게임 오디오/루프 정지
+    }
+
+    modalCloseBtn.addEventListener("click", closeModal);
+    modal.addEventListener("click", (e) => {
+      if (e.target === modal) closeModal();
+    });
+
+    // 카테고리 탭 클릭 이벤트
+    categoryTabs.addEventListener("click", (e) => {
+      if (!e.target.classList.contains("tab-btn")) return;
+
+      document.querySelectorAll(".tab-btn").forEach(btn => btn.classList.remove("active"));
+      e.target.classList.add("active");
+
+      currentCategory = e.target.dataset.category;
+      renderGames();
+    });
+
+    // 검색어 입력 이벤트
+    searchInput.addEventListener("input", (e) => {
+      searchQuery = e.target.value.trim();
+      renderGames();
+    });
+
+    // 초기 렌더링
+    renderGames();
+  </script>
+</body>
+</html>

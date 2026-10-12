@@ -2,13 +2,14 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>이차함수 포격 게임</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
   <style>
     body {
       margin: 0;
       padding: 20px;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Pretendard", "Segoe UI", Roboto, sans-serif;
       background: #f4f6f8;
       display: flex;
       flex-direction: column;
@@ -26,6 +27,7 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+      font-size: 14px;
     }
     .back-btn {
       text-decoration: none;
@@ -38,12 +40,22 @@
     #controls {
       margin-top: 15px;
       display: flex;
-      gap: 20px;
+      gap: 18px;
       align-items: center;
+      flex-wrap: wrap;
+      justify-content: center;
       background: #ffffff;
       padding: 12px 20px;
       border-radius: 8px;
       box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+      font-size: 14px;
+    }
+    .ctrl-group { display: flex; align-items: center; gap: 6px; }
+    .ctrl-value {
+      font-family: "Courier New", monospace;
+      font-weight: bold;
+      min-width: 52px;
+      color: #2b6cb0;
     }
     button {
       padding: 8px 16px;
@@ -61,7 +73,7 @@
 
   <div class="nav-bar">
     <a href="../../index.html" target="_top" class="back-btn">← 메인 허브로 돌아가기</a>
-    <span><strong>수학 개념:</strong> 이차함수의 그래프와 곡률</span>
+    <span><strong>수학 개념:</strong> 이차함수의 그래프 · 꼭짓점 · 근 · 미분계수</span>
   </div>
 
   <div id="game-container"></div>
@@ -74,6 +86,7 @@
     const GROUND_Y = 380;
 
     let sliderA, sliderB;
+    let labelA, labelB;
     let btnFire, btnReset;
 
     let target = { x: 550, y: 130, r: 25 };
@@ -81,6 +94,8 @@
 
     let projectile = { x: 0, y: 0, active: false };
     let statusMessage = "계수를 조절한 뒤 발사하세요.";
+    let shots = 0;
+    let hits = 0;
 
     function setup() {
       const canvas = createCanvas(CANVAS_W, CANVAS_H);
@@ -88,13 +103,19 @@
 
       const ctrlDiv = select("#controls");
 
-      ctrlDiv.child(createSpan("곡률 a: "));
+      // a 슬라이더: y = -ax² + bx 에서 이차항 계수 (클수록 포물선이 좁고 급하게 꺾임)
+      const groupA = createDiv("").addClass("ctrl-group").parent(ctrlDiv);
+      createSpan("a (이차항 계수)").parent(groupA);
       sliderA = createSlider(0.0005, 0.003, 0.0014, 0.0001);
-      sliderA.parent(ctrlDiv);
+      sliderA.parent(groupA);
+      labelA = createSpan("").addClass("ctrl-value").parent(groupA);
 
-      ctrlDiv.child(createSpan("기울기 b: "));
+      // b 슬라이더: x = 0 에서의 접선의 기울기 y'(0) = b (발사 각도)
+      const groupB = createDiv("").addClass("ctrl-group").parent(ctrlDiv);
+      createSpan("b (발사 기울기)").parent(groupB);
       sliderB = createSlider(0.5, 2.5, 1.3, 0.05);
-      sliderB.parent(ctrlDiv);
+      sliderB.parent(groupB);
+      labelB = createSpan("").addClass("ctrl-value").parent(groupB);
 
       btnFire = createButton("발사");
       btnFire.parent(ctrlDiv);
@@ -105,7 +126,7 @@
       btnReset.mousePressed(resetTarget);
     }
 
-    // 좌표 변환 함수
+    // 좌표 변환 함수 (수학 좌표 → 화면 좌표)
     function toScreenX(x) { return ORIGIN_X + x; }
     function toScreenY(y) { return GROUND_Y - y; }
 
@@ -114,9 +135,12 @@
 
       const a = sliderA.value();
       const b = sliderB.value();
+      labelA.html(a.toFixed(4));
+      labelB.html(b.toFixed(2));
 
       drawEnvironment();
       drawTrajectoryPreview(a, b);
+      drawVertex(a, b);
       drawTarget();
       drawObstacle();
       drawCannon();
@@ -126,11 +150,28 @@
       }
 
       // UI 정보 텍스트
+      // y = -ax² + bx 의 꼭짓점: x = b/(2a), y = b²/(4a)
+      // y = 0 인 두 근: x = 0, x = b/a  → 포탄이 떨어지는 지점
+      const vx = b / (2 * a);
+      const vy = (b * b) / (4 * a);
+      const landX = b / a;
+
       fill(50);
       noStroke();
       textSize(15);
+      textAlign(LEFT, BASELINE);
       text(`현재 함수: y = -${a.toFixed(4)}x² + ${b.toFixed(2)}x`, 20, 30);
       text(`상태: ${statusMessage}`, 20, 55);
+
+      fill(100);
+      textSize(13);
+      text(`꼭짓점 (b/2a, b²/4a) = (${vx.toFixed(0)}, ${vy.toFixed(0)})   ·   착지점 x = b/a = ${landX.toFixed(0)}`, 20, 78);
+
+      textAlign(RIGHT, BASELINE);
+      fill(50);
+      textSize(14);
+      text(`적중 ${hits} / 발사 ${shots}`, width - 20, 30);
+      textAlign(LEFT, BASELINE);
     }
 
     function drawEnvironment() {
@@ -158,6 +199,29 @@
       drawingContext.setLineDash([]);
     }
 
+    // 꼭짓점(최고점) 표시
+    function drawVertex(a, b) {
+      const vx = b / (2 * a);
+      const vy = (b * b) / (4 * a);
+      const sx = toScreenX(vx);
+      const sy = toScreenY(vy);
+      if (sx > width || sy < 0) return; // 화면 밖이면 생략
+
+      stroke(160, 190, 230);
+      strokeWeight(1);
+      drawingContext.setLineDash([2, 4]);
+      line(sx, sy, sx, GROUND_Y);
+      drawingContext.setLineDash([]);
+
+      noStroke();
+      fill(49, 130, 206);
+      circle(sx, sy, 8);
+      textSize(11);
+      textAlign(CENTER, BOTTOM);
+      text("꼭짓점", sx, sy - 6);
+      textAlign(LEFT, BASELINE);
+    }
+
     function drawCannon() {
       fill(70);
       noStroke();
@@ -168,7 +232,7 @@
       fill(160, 80, 80);
       noStroke();
       rect(toScreenX(obstacle.x), toScreenY(obstacle.h), obstacle.w, obstacle.h);
-      fill(255);
+      fill(120);
       textSize(12);
       text("장애물", toScreenX(obstacle.x) - 5, toScreenY(obstacle.h) - 8);
     }
@@ -182,9 +246,11 @@
     }
 
     function fireProjectile() {
+      if (projectile.active) return; // 비행 중 중복 발사 방지
       projectile.x = 0;
       projectile.y = 0;
       projectile.active = true;
+      shots++;
       statusMessage = "포탄 비행 중...";
     }
 
@@ -218,7 +284,8 @@
       let d = dist(projectile.x, projectile.y, target.x, target.y);
       if (d < target.r) {
         projectile.active = false;
-        statusMessage = "적중 성공! 다음 단계로 넘어가세요.";
+        hits++;
+        statusMessage = "적중 성공! '새 타깃'을 눌러 다음 단계로 넘어가세요.";
         return;
       }
 
@@ -226,6 +293,13 @@
       if (projectile.x > 0 && projectile.y <= 0) {
         projectile.active = false;
         statusMessage = "빗나갔습니다. 다시 계산해보세요.";
+        return;
+      }
+
+      // 화면 오른쪽 밖으로 나간 경우 (a가 작고 b가 크면 착지점 b/a가 화면보다 멀어짐)
+      if (toScreenX(projectile.x) > width) {
+        projectile.active = false;
+        statusMessage = "화면 밖으로 날아갔습니다. a를 키우거나 b를 줄여보세요.";
       }
     }
   </script>

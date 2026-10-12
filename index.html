@@ -52,6 +52,13 @@
       margin: 0 auto;
     }
 
+    .header-stats {
+      margin-top: 14px;
+      font-size: 0.85rem;
+      color: var(--text-sub);
+    }
+    .header-stats strong { color: var(--primary); }
+
     /* 탐색 및 필터 컨테이너 */
     .filter-container {
       max-width: 1200px;
@@ -132,6 +139,12 @@
       box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
     }
 
+    .game-card.is-soon {
+      border-style: dashed;
+      box-shadow: none;
+    }
+    .game-card.is-soon:hover { transform: none; box-shadow: none; }
+
     .card-banner {
       height: 140px;
       background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
@@ -140,6 +153,23 @@
       justify-content: center;
       font-size: 3.5rem;
       user-select: none;
+      position: relative;
+    }
+    .card-banner.theme-blue   { background: linear-gradient(135deg, #dbeafe 0%, #93c5fd 100%); }
+    .card-banner.theme-dark   { background: linear-gradient(135deg, #1f2937 0%, #0d1117 100%); }
+    .card-banner.theme-green  { background: linear-gradient(135deg, #dcfce7 0%, #86efac 100%); }
+    .card-banner.theme-soon   { background: #f1f5f9; filter: grayscale(1); opacity: 0.6; }
+
+    .status-badge {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 3px 9px;
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.9);
+      color: var(--text-sub);
     }
 
     .card-content {
@@ -153,6 +183,7 @@
       display: flex;
       justify-content: space-between;
       align-items: baseline;
+      gap: 10px;
       margin-bottom: 8px;
     }
 
@@ -165,6 +196,7 @@
     .card-author {
       font-size: 0.85rem;
       color: var(--text-sub);
+      white-space: nowrap;
     }
 
     .card-desc {
@@ -201,6 +233,7 @@
       background: var(--primary);
       color: white;
       text-align: center;
+      text-decoration: none;
       border: none;
       border-radius: 6px;
       font-size: 0.95rem;
@@ -211,6 +244,12 @@
 
     .btn-play:hover {
       background: var(--primary-hover);
+    }
+
+    .btn-play:disabled {
+      background: #e2e8f0;
+      color: #94a3b8;
+      cursor: not-allowed;
     }
 
     .btn-external {
@@ -249,8 +288,8 @@
     .modal-window {
       background: #ffffff;
       width: 100%;
-      max-width: 900px;
-      height: 640px;
+      max-width: 1280px;
+      height: min(860px, 92vh);
       border-radius: 12px;
       display: flex;
       flex-direction: column;
@@ -265,11 +304,25 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+      gap: 12px;
     }
 
     .modal-title {
       font-weight: 700;
       font-size: 1.1rem;
+    }
+
+    .modal-header-actions {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .modal-newtab {
+      font-size: 0.85rem;
+      color: var(--primary);
+      text-decoration: none;
+      font-weight: 600;
     }
 
     .modal-close {
@@ -283,7 +336,7 @@
 
     .modal-body {
       flex: 1;
-      background: #000;
+      background: #f4f6f8;
     }
 
     .modal-body iframe {
@@ -298,14 +351,15 @@
   <header>
     <h1>📐 Coding Math Arcade</h1>
     <p>수학적 원리와 알고리즘을 결합하여 제작한 인터랙티브 학습 게임 아카이브입니다.</p>
+    <div class="header-stats" id="headerStats"></div>
   </header>
 
   <div class="filter-container">
     <div class="category-tabs" id="categoryTabs">
       <button class="tab-btn active" data-category="all">전체보기</button>
-      <button class="tab-btn" data-category="algebra">대수/해석</button>
-      <button class="tab-btn" data-category="geometry">기하/벡터</button>
-      <button class="tab-btn" data-category="number-theory">정수론/이산수학</button>
+      <button class="tab-btn" data-category="function">함수/해석</button>
+      <button class="tab-btn" data-category="probability">확률/경우의 수</button>
+      <button class="tab-btn" data-category="etc">기타</button>
     </div>
 
     <div class="search-box">
@@ -320,84 +374,122 @@
     <div class="modal-window">
       <div class="modal-header">
         <span class="modal-title" id="modalTitle">게임 타이틀</span>
-        <button class="modal-close" id="modalCloseBtn">&times;</button>
+        <div class="modal-header-actions">
+          <a class="modal-newtab" id="modalNewTab" href="#" target="_blank">새 창에서 열기 ↗</a>
+          <button class="modal-close" id="modalCloseBtn" aria-label="닫기">&times;</button>
+        </div>
       </div>
       <div class="modal-body">
-        <iframe id="gameIframe" src="" allow="autoplay"></iframe>
+        <iframe id="gameIframe" src="" allow="autoplay; fullscreen"></iframe>
       </div>
     </div>
   </div>
 
   <script>
     /**
-     * 조원들의 게임 목록 데이터
+     * 팀원들의 게임 목록 데이터
      * 새 게임 추가 시 이 배열에 객체 하나만 추가하면 됩니다.
+     *
+     * status 값
+     *   "ready"    : 이 사이트 안에 파일이 있음 → 모달로 바로 플레이
+     *   "external" : 외부 사이트(Replit 등)에 있음 → 새 창으로 열기
+     *   "soon"     : 아직 제작/통합 중 → 비활성 카드
+     *
+     * ※ author 칸의 이름은 직접 바꿔주세요!
      */
     const GAMES_DATA = [
       {
         id: "projectile-math",
         title: "이차함수 포격전",
-        author: "1조",
-        category: "algebra",
+        author: "작성자 이름",
+        category: "function",
+        status: "ready",
         icon: "🎯",
-        desc: "이차함수의 곡률(a)과 기울기(b)를 직접 계산/조정하여 장애물을 넘겨 타깃을 타격하는 탄도학 게임입니다.",
-        tags: ["#이차함수", "#포물선", "#순간변화율"],
+        theme: "theme-blue",
+        desc: "y = -ax² + bx 의 계수 a, b를 조절해 포물선 궤도를 만들고, 장애물을 넘겨 타깃을 맞히는 탄도 게임입니다. 꼭짓점과 착지점(근)이 실시간으로 계산됩니다.",
+        tags: ["#이차함수", "#포물선", "#꼭짓점", "#미분계수"],
         path: "./games/projectile-math/이차함수.html"
       },
       {
-        id: "vector-flight",
-        title: "벡터 항법사 (Vector Flight)",
-        author: "2조",
-        category: "geometry",
-        icon: "✈️",
-        desc: "바람의 풍향 벡터와 항공기 추진 벡터의 덧셈 연산을 통해 목표 공항 활주로에 정밀 착륙하세요.",
-        tags: ["#평면벡터", "#벡터의합", "#삼각비"],
-        path: "./games/vector-flight/index.html"
+        id: "gene-lab",
+        title: "유전자 LAB",
+        author: "작성자 이름",
+        category: "probability",
+        status: "ready",
+        icon: "🧬",
+        theme: "theme-dark",
+        desc: "코돈(유전 인자)을 8칸 체인에 배열해 생물의 표현형을 만들고, Math.random()으로 점 돌연변이를 일으켜 서열 보존율을 분석하는 생명과학 융합 시뮬레이터입니다.",
+        tags: ["#중복순열", "#확률", "#난수", "#삼각함수", "#생명과학융합"],
+        path: "./games/gene-lab/index.html"
       },
       {
-        id: "prime-defense",
-        title: "소수 타워 디펜스",
-        author: "3조",
-        category: "number-theory",
-        icon: "🛡️",
-        desc: "침공해오는 합성수 몬스터를 소인수분해 포탑으로 격파하여 기지를 방어하는 정수론 게임입니다.",
-        tags: ["#소수", "#에라토스테네스의체", "#소인수분해"],
-        path: "./games/prime-defense/index.html"
+        id: "dinosaur-game",
+        title: "Dinosaur Game",
+        author: "작성자 이름",
+        category: "etc",
+        status: "external",
+        icon: "🦖",
+        theme: "theme-green",
+        desc: "팀원이 Replit에서 제작한 공룡 게임입니다. Replit 페이지에서 실행됩니다.",
+        tags: ["#Replit"],
+        path: "https://replit.com/@h2610504/Dinosaur-Game"
       },
       {
-        id: "calculus-rollercoaster",
-        title: "미분 롤러코스터",
-        author: "4조",
-        category: "algebra",
-        icon: "🎢",
-        desc: "곡선 트랙의 순간변화율(접선의 기울기)을 실시간으로 계산해 열차 탈선을 방지하는 러닝 액션 게임입니다.",
-        tags: ["#도함수", "#접선의기울기", "#극값"],
-        path: "./games/calculus-rollercoaster/index.html"
+        id: "coming-soon",
+        title: "새 게임 통합 예정",
+        author: "",
+        category: "etc",
+        status: "soon",
+        icon: "🧩",
+        theme: "theme-soon",
+        desc: "팀원들이 제작 중인 게임이 이곳에 추가될 예정입니다. GAMES_DATA 배열에 항목 하나만 추가하면 카드가 자동으로 생성됩니다.",
+        tags: ["#확장가능구조"],
+        path: ""
       }
     ];
 
     const grid = document.getElementById("arcadeGrid");
     const categoryTabs = document.getElementById("categoryTabs");
     const searchInput = document.getElementById("searchInput");
+    const headerStats = document.getElementById("headerStats");
 
     const modal = document.getElementById("gameModal");
     const modalTitle = document.getElementById("modalTitle");
+    const modalNewTab = document.getElementById("modalNewTab");
     const gameIframe = document.getElementById("gameIframe");
     const modalCloseBtn = document.getElementById("modalCloseBtn");
 
     let currentCategory = "all";
     let searchQuery = "";
 
+    // 등록된 게임 수 표시
+    const playableCount = GAMES_DATA.filter(g => g.status !== "soon").length;
+    headerStats.innerHTML = `플레이 가능한 게임 <strong>${playableCount}</strong>개`;
+
+    // 상태별 버튼 HTML
+    function buildActions(game) {
+      if (game.status === "ready") {
+        return `
+          <button class="btn-play" data-play="${game.id}">플레이하기</button>
+          <a href="${game.path}" target="_blank" class="btn-external" title="새 창에서 열기">↗</a>`;
+      }
+      if (game.status === "external") {
+        return `<a href="${game.path}" target="_blank" rel="noopener" class="btn-play">새 창에서 플레이 ↗</a>`;
+      }
+      return `<button class="btn-play" disabled>준비 중</button>`;
+    }
+
     // 게임 카드 렌더링
     function renderGames() {
       grid.innerHTML = "";
+      const q = searchQuery.toLowerCase();
 
       const filtered = GAMES_DATA.filter((game) => {
         const matchCategory = currentCategory === "all" || game.category === currentCategory;
         const matchSearch =
-          game.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          game.desc.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          game.tags.some(t => t.toLowerCase().includes(searchQuery.toLowerCase()));
+          game.title.toLowerCase().includes(q) ||
+          game.desc.toLowerCase().includes(q) ||
+          game.tags.some(t => t.toLowerCase().includes(q));
         return matchCategory && matchSearch;
       });
 
@@ -408,12 +500,15 @@
 
       filtered.forEach((game) => {
         const card = document.createElement("div");
-        card.className = "game-card";
+        card.className = "game-card" + (game.status === "soon" ? " is-soon" : "");
 
         const tagsHtml = game.tags.map(t => `<span class="math-tag">${t}</span>`).join("");
+        let badge = "";
+        if (game.status === "external") badge = `<span class="status-badge">외부 링크</span>`;
+        if (game.status === "soon") badge = `<span class="status-badge">준비 중</span>`;
 
         card.innerHTML = `
-          <div class="card-banner">${game.icon}</div>
+          <div class="card-banner ${game.theme || ""}">${game.icon}${badge}</div>
           <div class="card-content">
             <div class="card-header">
               <h3 class="card-title">${game.title}</h3>
@@ -421,22 +516,28 @@
             </div>
             <p class="card-desc">${game.desc}</p>
             <div class="tag-container">${tagsHtml}</div>
-            <div class="card-actions">
-              <button class="btn-play" onclick="openGameModal('${game.title}', '${game.path}')">플레이하기</button>
-              <a href="${game.path}" target="_blank" class="btn-external" title="새 창에서 열기">↗</a>
-            </div>
+            <div class="card-actions">${buildActions(game)}</div>
           </div>
         `;
         grid.appendChild(card);
       });
     }
 
+    // 플레이 버튼 클릭 (이벤트 위임)
+    grid.addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-play]");
+      if (!btn) return;
+      const game = GAMES_DATA.find(g => g.id === btn.dataset.play);
+      if (game) openGameModal(game);
+    });
+
     // 모달 제어 함수
-    window.openGameModal = function(title, path) {
-      modalTitle.textContent = title;
-      gameIframe.src = path;
+    function openGameModal(game) {
+      modalTitle.textContent = game.title;
+      modalNewTab.href = game.path;
+      gameIframe.src = game.path;
       modal.classList.add("active");
-    };
+    }
 
     function closeModal() {
       modal.classList.remove("active");
@@ -446,6 +547,9 @@
     modalCloseBtn.addEventListener("click", closeModal);
     modal.addEventListener("click", (e) => {
       if (e.target === modal) closeModal();
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && modal.classList.contains("active")) closeModal();
     });
 
     // 카테고리 탭 클릭 이벤트

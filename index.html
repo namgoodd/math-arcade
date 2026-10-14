@@ -158,6 +158,7 @@
     .card-banner.theme-blue   { background: linear-gradient(135deg, #dbeafe 0%, #93c5fd 100%); }
     .card-banner.theme-dark   { background: linear-gradient(135deg, #1f2937 0%, #0d1117 100%); }
     .card-banner.theme-green  { background: linear-gradient(135deg, #dcfce7 0%, #86efac 100%); }
+    .card-banner.theme-space  { background: radial-gradient(circle at 70% 40%, #1e3a5f 0%, #050a12 70%); }
     .card-banner.theme-soon   { background: #f1f5f9; filter: grayscale(1); opacity: 0.6; }
 
     .status-badge {
@@ -359,6 +360,7 @@
       <button class="tab-btn active" data-category="all">전체보기</button>
       <button class="tab-btn" data-category="function">함수/해석</button>
       <button class="tab-btn" data-category="probability">확률/경우의 수</button>
+      <button class="tab-btn" data-category="physics">벡터/물리</button>
       <button class="tab-btn" data-category="etc">기타</button>
     </div>
 
@@ -433,6 +435,18 @@
         desc: "팀원이 Replit에서 제작한 공룡 게임입니다. Replit 페이지에서 실행됩니다.",
         tags: ["#Replit"],
         path: "https://replit.com/join#t=scsomwippmpixsb-h2610504"
+      },
+      {
+        id: "orbit-lab",
+        title: "ORBIT LAB",
+        author: "작성자 이름",
+        category: "physics",
+        status: "ready",
+        icon: "🚀",
+        theme: "theme-space",
+        desc: "실제 중력 공식(만유인력)으로 움직이는 우주선을 조종해 지구 궤도를 벗어나 실제 외계행성의 항성까지 날아가는 2D 궤도 시뮬레이터입니다. 근지점·원지점과 궤도 예측선이 실시간으로 계산됩니다.",
+        tags: ["#만유인력", "#벡터의합성", "#타원궤도", "#삼각함수"],
+        path: "./games/orbit-lab/index.html"
       },
       {
         id: "coming-soon",

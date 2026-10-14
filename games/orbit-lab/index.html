@@ -1,0 +1,1200 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#07101d">
+<title>ORBIT LAB</title>
+<style>
+:root{
+  --bg:#050a12;--panel:#0c1523;--panel2:#101c2d;--line:#26384f;
+  --text:#edf5ff;--muted:#91a5bd;--accent:#65c7ff;--good:#65e6a1;--warn:#ffd166;--bad:#ff6b6b;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);
+font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+button,input{font:inherit}
+#app{position:relative;width:100%;height:100%}
+canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
+#hud{position:absolute;inset:0;pointer-events:none}
+.card{background:rgba(8,16,28,.88);border:1px solid rgba(112,151,190,.22);
+border-radius:14px;box-shadow:0 12px 35px rgba(0,0,0,.28);backdrop-filter:blur(10px)}
+#top{position:absolute;top:max(12px,env(safe-area-inset-top));left:12px;right:12px;display:flex;gap:10px;align-items:flex-start}
+#title{padding:10px 13px;pointer-events:auto}
+#backHub{padding:10px 13px;pointer-events:auto;color:var(--text);text-decoration:none;font-size:12px;font-weight:700;white-space:nowrap;align-self:stretch;display:flex;align-items:center}
+#backHub:hover{border-color:var(--accent);color:var(--accent)}
+#title b{display:block;font-size:15px;letter-spacing:.08em}
+#title span{font-size:11px;color:var(--muted)}
+#destination{padding:10px 13px;font-size:11px;font-weight:700;letter-spacing:.03em;color:#ffd9a0}
+#status{margin-left:auto;padding:10px 13px;font-size:12px;font-weight:700;letter-spacing:.04em}
+#status.intro{color:var(--warn)} #status.ready{color:var(--good)}
+#stats{position:absolute;top:78px;left:12px;width:215px;padding:9px 12px}
+.row{display:flex;justify-content:space-between;gap:12px;font-size:12px;line-height:1.75}
+.row span:first-child{color:var(--muted)}
+.row b{font-variant-numeric:tabular-nums}
+#panel{position:absolute;right:12px;bottom:max(12px,env(safe-area-inset-bottom));width:min(340px,calc(100% - 24px));
+padding:11px 13px;pointer-events:auto;max-height:min(66vh,600px);overflow-y:auto}
+#panel.disabled{opacity:.46;filter:saturate(.55)}
+#panel.disabled #panelBody{pointer-events:none}
+#panel.collapsed #panelBody{display:none}
+.panelHead{display:flex;justify-content:space-between;align-items:center;font-size:12px;letter-spacing:.08em;color:var(--muted);margin-bottom:6px}
+.panelHead button{padding:3px 10px;font-size:13px}
+.control{margin:6px 0 10px}
+.control label{display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px}
+.control label span{color:var(--accent);font-variant-numeric:tabular-nums}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.buttons{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:8px}
+.nudge{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:-2px 0 10px}
+.hold{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:0 0 10px}
+.nudge button,.hold button{padding:7px 2px;font-size:12px}
+button{border:1px solid var(--line);border-radius:9px;background:#142238;color:var(--text);padding:9px 10px;
+font-weight:700;cursor:pointer}
+button:active{transform:translateY(1px)}
+button.primary{background:#1b638d;border-color:#3f9dca}
+button.on{background:#1b638d;border-color:#65c7ff;box-shadow:0 0 0 1px rgba(101,199,255,.35) inset}
+button:disabled{opacity:.45;cursor:not-allowed}
+#zoomBox{position:absolute;right:12px;top:200px;display:flex;flex-direction:column;gap:6px;pointer-events:auto}
+#zoomBox button{width:38px;height:38px;padding:0;font-size:18px;line-height:1}
+#help{position:absolute;left:12px;bottom:max(12px,env(safe-area-inset-bottom));padding:9px 11px;
+font-size:11px;color:var(--muted);max-width:calc(100% - 390px);line-height:1.5}
+#intro{position:absolute;inset:0;display:grid;place-items:center;background:
+radial-gradient(circle at 50% 48%,rgba(30,78,120,.22),transparent 45%),rgba(2,6,12,.38);
+pointer-events:auto}
+#introBox{width:min(430px,calc(100% - 30px));padding:24px;text-align:center}
+#introBox h1{margin:0 0 7px;font-size:28px}
+#introBox p{margin:0 0 18px;color:var(--muted);font-size:13px;line-height:1.6}
+.destName{font-size:20px;font-weight:800;color:#ffd9a0;margin-bottom:5px}
+.destHost,.destDistance{font-size:12px;color:var(--muted);line-height:1.6}
+.destinationBox{margin-bottom:18px}
+#start{width:100%;padding:13px;font-size:15px}
+#countdown{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:clamp(32px,8vw,76px);
+font-weight:900;text-shadow:0 0 30px rgba(101,199,255,.5);opacity:0;pointer-events:none;white-space:nowrap}
+#message{position:absolute;left:50%;top:18%;transform:translateX(-50%);padding:9px 14px;
+font-size:13px;font-weight:800;opacity:0;transition:opacity .2s;white-space:nowrap;pointer-events:none}
+@media(max-width:720px){
+ #stats{top:68px;width:200px}
+ #panel{width:calc(100% - 24px);bottom:10px;max-height:56vh}
+ #help{display:none}
+ #status{font-size:11px}
+ #destination{display:none}
+}
+#controlsModal,#success{position:absolute;inset:0;display:none;place-items:center;background:rgba(1,5,10,.68);z-index:20}
+.modal{position:relative;width:min(450px,calc(100% - 28px));padding:24px;max-height:88vh;overflow-y:auto}
+.modal h2{margin:0 0 14px}
+.modal p{font-size:13px;color:#b8c7d8;line-height:1.65;margin:11px 0}
+.modal p b{color:#edf5ff}
+.close{position:absolute;right:10px;top:8px;background:transparent;border:0;font-size:28px;color:#9fb1c7;padding:2px 9px}
+.modal .primary{width:100%;margin-top:7px}
+.successBox{width:min(440px,calc(100% - 28px));padding:30px;text-align:center}
+.successStar{font-size:58px;line-height:1;color:#ffd166;text-shadow:0 0 30px rgba(255,209,102,.55)}
+.successBox h1{margin:12px 0 5px;font-size:25px;letter-spacing:.08em}
+.successBox p{color:#a9bacd;font-size:13px}
+#missionTime{font-size:12px;color:#65c7ff;margin:14px 0 18px}
+#restartSuccess{width:100%;font-size:15px;padding:12px}
+</style>
+</head>
+<body>
+<div id="app">
+<canvas id="space"></canvas>
+<div id="hud">
+  <div id="top">
+    <a id="backHub" class="card" href="../../index.html" target="_top">← 메인 허브</a>
+    <div id="title" class="card"><b>ORBIT LAB</b><span>2D 궤도 발사 시뮬레이터</span></div>
+    <div id="destination" class="card">목적지 선택 중</div>
+    <div id="status" class="card intro">발사 준비 중</div>
+  </div>
+  <div id="stats" class="card">
+    <div class="row"><span>고도</span><b id="alt">0 km</b></div>
+    <div class="row"><span>속도</span><b id="vel">0.00 km/s</b></div>
+    <div class="row"><span>발사각</span><b id="ang">90.0°</b></div>
+    <div class="row"><span>지구 거리</span><b id="dist">6,371 km</b></div>
+    <div class="row"><span>상태</span><b id="orbit">발사대</b></div>
+    <div class="row"><span>별까지</span><b id="dT">-</b></div>
+    <div class="row"><span>접근 속도</span><b id="appr">-</b></div>
+    <div class="row"><span>근지점</span><b id="pe">-</b></div>
+    <div class="row"><span>원지점</span><b id="ap">-</b></div>
+  </div>
+  <div id="zoomBox">
+    <button id="zoomIn" class="card" title="확대">＋</button>
+    <button id="zoomOut" class="card" title="축소">－</button>
+    <button id="zoomAuto" class="card" title="자동 줌">A</button>
+  </div>
+  <div id="help" class="card">화면을 드래그하면 점화 방향이 바뀝니다 · 휠/＋－ 확대·축소 · ←→ 1° 미세 회전(Shift 10°) · Space 엔진</div>
+  <div id="panel" class="card disabled">
+    <div class="panelHead"><span>FLIGHT CONTROL</span><button id="collapse">▾</button></div>
+    <div id="panelBody">
+      <div class="control">
+        <label>점화 방향 <span id="angVal">90.0°</span></label>
+        <input id="angle" type="range" min="0" max="360" step="0.1" value="90">
+      </div>
+      <div class="nudge">
+        <button data-nudge="10">⟲ 10°</button>
+        <button data-nudge="1">⟲ 1°</button>
+        <button data-nudge="-1">1° ⟳</button>
+        <button data-nudge="-10">10° ⟳</button>
+      </div>
+      <div class="hold">
+        <button data-hold="pro">순행</button>
+        <button data-hold="retro">역행</button>
+        <button data-hold="star">별 방향</button>
+        <button data-hold="out">지구 반대</button>
+        <button data-hold="in">지구 방향</button>
+        <button data-hold="">고정 해제</button>
+      </div>
+      <div class="control">
+        <label>추력 <span id="thrustVal">55%</span></label>
+        <input id="thrust" type="range" min="0" max="1000" step="1" value="742">
+      </div>
+      <div class="control">
+        <label>시간 배속 <span id="timeVal">1×</span></label>
+        <input id="time" type="range" min="0" max="5" value="0">
+      </div>
+      <div class="buttons">
+        <button id="burn" class="primary">엔진 점화</button>
+        <button id="pause">일시정지</button>
+        <button id="engine">엔진: 주엔진</button>
+        <button id="predict" class="on">예측선 ON</button>
+        <button id="controls">조작법</button>
+        <button id="trail">궤적 지우기</button>
+        <button id="reset">다시 시작</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="intro">
+  <div id="introBox" class="card">
+    <h1>ORBIT LAB</h1>
+    <p>발사대에서 출발한 우주선을 실제 중력 모델로 비행시킵니다.<br>
+    이번 항해의 목적지는 실제 발견된 외계행성 중 무작위로 선택됩니다.<br>
+    별 가까이 다가가면 자동으로 착륙합니다.</p>
+    <div id="introDestination" class="destinationBox">목적지 선택 중...</div>
+    <button id="start" class="primary">시뮬레이션 시작</button>
+  </div>
+</div>
+<div id="countdown"></div>
+<div id="message" class="card"></div>
+
+<div id="controlsModal">
+  <div class="modal card">
+    <button id="closeControls" class="close">×</button>
+    <h2>조작법</h2>
+    <p><b>① 점화 방향</b><br>화면을 드래그하면 파란 벡터가 그 방향을 가리킵니다. 슬라이더와 ±1°/±10° 버튼으로 0.1° 단위 미세 조정이 가능합니다.</p>
+    <p><b>② 방향 고정</b><br>순행·역행·별 방향·지구 반대/방향 버튼을 누르면 우주선이 그 방향을 계속 따라갑니다. 수동으로 돌리면 해제됩니다.</p>
+    <p><b>③ 추력과 엔진</b><br>추력 슬라이더는 낮은 값에서 더 촘촘하게 조절됩니다. 엔진은 정밀 RCS → 주엔진 → 크루즈 드라이브(가상의 고출력 엔진) 순으로 바뀝니다.</p>
+    <p><b>④ 예측선</b><br>노란 점선은 지금 설정대로 비행했을 때의 경로입니다. 빨간색이면 지구 충돌, 초록색이면 별 착륙 구역 진입 예상입니다.</p>
+    <p><b>⑤ 배속·줌</b><br>배속은 최대 600×입니다. 줌은 자동으로 맞춰지며 ＋/－ 또는 휠로 직접 조절할 수 있고 A를 누르면 자동으로 돌아갑니다.</p>
+    <p><b>⑥ 자동 착륙</b><br>목표 별의 점선 착륙 구역에 들어가면 엔진 조작 없이 자동으로 착륙합니다.</p>
+    <button id="closeControls2" class="primary">확인</button>
+  </div>
+</div>
+
+<div id="success">
+  <div class="successBox card">
+    <div class="successStar">★</div>
+    <h1>MISSION COMPLETE</h1>
+    <p id="successDestination">긴 항해 끝에 목표 별에 착륙했습니다.</p>
+    <div id="missionTime"></div>
+    <button id="restartSuccess" class="primary">다시하기</button>
+  </div>
+</div>
+</div>
+
+<script>
+"use strict";
+
+/*
+ ORBIT LAB v2
+ - 외부 라이브러리/인터넷 연결 없음
+ - 2D Newtonian point-mass gravity (SI 단위)
+ - 개선: 자동 줌/카메라, 속도감 효과, 최대 600× 배속(적응형 적분),
+         크루즈 엔진, 정밀 방향/추력 제어, 방향 고정, 궤도 예측선,
+         거대한 목표 별, 착륙 구역 진입 시 자동 착륙
+*/
+
+const $ = id => document.getElementById(id);
+const canvas = $("space");
+const ctx = canvas.getContext("2d", {alpha:false});
+const DPR = Math.min(window.devicePixelRatio || 1, 2);
+const PI2 = Math.PI * 2;
+
+const UI = {};
+["intro","start","destination","introDestination","panel","status","alt","vel","ang","dist","orbit",
+ "dT","appr","pe","ap","thrust","thrustVal","time","timeVal","burn","pause","reset","trail","countdown",
+ "message","controls","controlsModal","closeControls","closeControls2","success","successDestination",
+ "restartSuccess","missionTime","angle","angVal","engine","predict","collapse","zoomIn","zoomOut","zoomAuto"
+].forEach(id => UI[id] = $(id));
+
+const DESTINATIONS = [
+  {
+    planet:"Proxima Centauri b", host:"Proxima Centauri", distanceLy:4.246, radiusEarth:1.03,
+    starRadiusSolar:0.154, starTemp:3042, starColor:"#e96a45", rgb:[233,106,69],
+    core:"#ffe6c8", rim:"#8a2a16", visual:"redDwarf", angleDeg:28
+  },
+  {
+    planet:"TRAPPIST-1 e", host:"TRAPPIST-1", distanceLy:39.6, radiusEarth:0.92,
+    starRadiusSolar:0.119, starTemp:2520, starColor:"#c83d3d", rgb:[200,61,61],
+    core:"#ffd2c2", rim:"#5c1414", visual:"ultracoolDwarf", angleDeg:34
+  },
+  {
+    planet:"TOI-700 d", host:"TOI-700", distanceLy:101.4, radiusEarth:1.07,
+    starRadiusSolar:0.42, starTemp:3482, starColor:"#f08a50", rgb:[240,138,80],
+    core:"#fff2d6", rim:"#8f4318", visual:"orangeDwarf", angleDeg:39
+  }
+];
+const FLARE = {
+  redDwarf:       {n:9,  base:.16, amp:.22, w:.07},
+  ultracoolDwarf: {n:16, base:.08, amp:.17, w:.05},
+  orangeDwarf:    {n:6,  base:.10, amp:.10, w:.12}
+};
+
+const W = {
+  mu: 3.986004418e14,       // 지구 표준중력상수 [m^3/s^2]
+  Re: 6371000,              // 지구 평균 반지름 [m]
+  atmosphere: 120000,       // 대기권 상한 [m]
+  mass: 4200,               // 우주선 질량 [kg]
+  engines: [
+    {name:"정밀 RCS",        N:6000},
+    {name:"주엔진",          N:180000},
+    {name:"크루즈 드라이브", N:1200000}
+  ]
+};
+const MULTS  = [1,5,20,60,200,600];
+const LABELS = ["1×","5×","20×","60×","200×","600×"];
+const APP = 5;           // 이 거리(별 반지름의 5배) 안에서 카메라가 별 쪽으로 이동
+const CAPTURE = 2.4;     // 착륙 구역 = 별 반지름 × 2.4
+
+let cw = innerWidth, ch = innerHeight;
+
+const state = {
+  mode:"idle",             // idle | intro | active | paused | landing | success | crashed
+  t:0,
+  x:0,y:0,vx:0,vy:0,
+  thrustOn:false, thrustPct:.55, thrustAngle:-Math.PI/2, hold:null, engine:1,
+  trail:[],
+  cameraX:0,cameraY:0, logH:Math.log(W.Re*7.5), scale:1, zoomMul:1, kSm:0,
+  targetX:0,targetY:0,starR:1e8,captureR:2e8,
+  destination:null, landing:null,
+  meteors:[], fireworks:[], effectSeed:918273, lastMeteor:0,
+  introStart:0, last:0,
+  stars:[], spots:[],
+  drag:false, sliderDrag:false, showPred:true,
+  flowX:0, flowY:0, flowUx:1, flowUy:0, flowSpeed:0, effWarp:1,
+  messageTimer:0, successTimer:0, fireworkStarted:0, crashShown:false
+};
+let rafId = 0;
+
+const minDim = () => Math.min(cw, ch);
+function applyScale(){ state.scale = minDim()*0.5 / Math.exp(state.logH); }
+function resize(){
+  cw=innerWidth; ch=innerHeight;
+  canvas.width=Math.floor(cw*DPR); canvas.height=Math.floor(ch*DPR);
+  canvas.style.width=cw+"px"; canvas.style.height=ch+"px";
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  applyScale();
+}
+addEventListener("resize",()=>{resize(); if(state.mode==="idle"||state.mode==="crashed"||state.mode==="success") draw(performance.now());},{passive:true});
+
+function seedStars(){
+  state.stars=[]; state.spots=[];
+  let s=123456789;
+  const rand=()=>{s=(s*1664525+1013904223)>>>0;return s/4294967296};
+  for(let i=0;i<260;i++){
+    state.stars.push({x:rand(),y:rand(),r:.4+rand()*1.4,a:.25+rand()*.7,l:[.35,.7,1][Math.floor(rand()*3)]});
+  }
+  for(let i=0;i<11;i++){
+    state.spots.push({a:rand()*PI2,rr:.1+rand()*.72,sz:.04+rand()*.09});
+  }
+}
+seedStars();
+
+function randFx(){
+  state.effectSeed=(state.effectSeed*1664525+1013904223)>>>0;
+  return state.effectSeed/4294967296;
+}
+
+/* ───────── 목적지 ───────── */
+function chooseDestination(){
+  const d = state.destination = DESTINATIONS[Math.floor(Math.random()*DESTINATIONS.length)];
+  const scaleFactor = Math.min(1.7, Math.max(.75, Math.sqrt(d.distanceLy/4.246)));
+  const a = d.angleDeg * Math.PI / 180;
+  const R = W.Re * 180 * scaleFactor;
+  state.targetX = Math.cos(a) * R;
+  state.targetY = -Math.sin(a) * R;
+  // 별을 크게: 항성 반지름이 클수록 더 크게 그려진다 (지구 반지름의 약 28~47배)
+  state.starR = W.Re * (18 + d.starRadiusSolar*70);
+  state.captureR = state.starR * CAPTURE;
+  renderDestinationUI();
+}
+function renderDestinationUI(){
+  const d = state.destination; if(!d) return;
+  UI.destination.textContent = `DESTINATION  ${d.planet} · ${d.host}`;
+  UI.introDestination.innerHTML =
+    `<div class="destName">${d.planet}</div>
+     <div class="destHost">항성: ${d.host} · ${d.starTemp.toLocaleString()} K · 항성 반지름 ${d.starRadiusSolar.toFixed(3)} R☉</div>
+     <div class="destDistance">지구에서 약 ${d.distanceLy}광년 · 실제 외계행성 데이터 기반</div>`;
+}
+
+function resetPhysics(){
+  chooseDestination();
+  state.x=0; state.y=-(W.Re+4);
+  state.vx=0; state.vy=-7.75;
+  state.t=0; state.trail=[];
+  state.meteors=[]; state.fireworks=[];
+  state.lastMeteor=performance.now();
+  state.thrustOn=false; state.thrustAngle=-Math.PI/2; state.hold=null;
+  state.landing=null; state.kSm=0; state.zoomMul=1;
+  state.cameraX=0; state.cameraY=0; state.logH=Math.log(W.Re*7.5);
+  state.flowX=state.flowY=0; state.flowSpeed=0; state.effWarp=1;
+  state.crashShown=false;
+  clearTimeout(state.successTimer);
+  applyScale();
+  state.mode="idle";
+}
+
+/* ───────── 좌표 변환 ───────── */
+function center(){ return {x:cw*.47,y:ch*.53}; }
+function viewScale(){ return state.scale; }
+function sx(x){return center().x+(x-state.cameraX)*state.scale}
+function sy(y){return center().y+(y-state.cameraY)*state.scale}
+function targetDist(){ return Math.hypot(state.x-state.targetX,state.y-state.targetY); }
+
+function fmt(n,d=0){
+  return Number(n).toLocaleString("ko-KR",{maximumFractionDigits:d,minimumFractionDigits:d});
+}
+function currentAccel(){ return W.engines[state.engine].N*state.thrustPct/W.mass; }
+function thrustFrac(){ return Math.pow(Number(UI.thrust.value)/1000,2); }
+function angleDegMath(){ let d=-state.thrustAngle*180/Math.PI; return ((d%360)+360)%360; }
+
+/* ───────── 방향 고정 ───────── */
+function holdAngle(x,y,vx,vy,hold){
+  switch(hold){
+    case "pro":   return Math.atan2(vy,vx);
+    case "retro": return Math.atan2(-vy,-vx);
+    case "star":  return Math.atan2(state.targetY-y,state.targetX-x);
+    case "out":   return Math.atan2(y,x);
+    case "in":    return Math.atan2(-y,-x);
+  }
+  return state.thrustAngle;
+}
+function syncHoldButtons(){
+  document.querySelectorAll("[data-hold]").forEach(b=>{
+    const h=b.dataset.hold||null;
+    b.classList.toggle("on", h!==null && h===state.hold);
+  });
+}
+function nudge(deg){
+  state.hold=null; syncHoldButtons();
+  state.thrustAngle-=deg*Math.PI/180;
+}
+
+/* ───────── UI 갱신 ───────── */
+function updateUI(){
+  const r=Math.hypot(state.x,state.y), alt=r-W.Re, speed=Math.hypot(state.vx,state.vy);
+  let flightAngle=Math.atan2(-state.vy,state.vx)*180/Math.PI;
+  if(flightAngle<0)flightAngle+=360;
+  UI.alt.textContent=fmt(Math.max(0,alt/1000),alt>1e8?0:1)+" km";
+  UI.vel.textContent=fmt(speed/1000,3)+" km/s";
+  UI.ang.textContent=fmt(flightAngle,1)+"°";
+  UI.dist.textContent=fmt(r/1000,r>1e8?0:1)+" km";
+
+  const T=targetDist();
+  UI.dT.textContent=fmt(Math.max(0,T-state.starR)/1000,0)+" km";
+  const closing=((state.targetX-state.x)*state.vx+(state.targetY-state.y)*state.vy)/(T||1);
+  UI.appr.textContent=fmt(closing/1000,2)+" km/s";
+
+  // 궤도 요소
+  const v2=speed*speed, rv=state.x*state.vx+state.y*state.vy;
+  const eps=v2/2-W.mu/r;
+  const ex=((v2-W.mu/r)*state.x-rv*state.vx)/W.mu;
+  const ey=((v2-W.mu/r)*state.y-rv*state.vy)/W.mu;
+  const e=Math.hypot(ex,ey);
+  const a=-W.mu/(2*(Math.abs(eps)<1e-9?1e-9:eps));
+  const pe=a*(1-e)-W.Re;
+  const ap=eps<0 ? a*(1+e)-W.Re : null;
+  UI.pe.textContent = pe<0 ? "충돌 궤도 "+fmt(pe/1000,0)+" km" : fmt(pe/1000,0)+" km";
+  UI.pe.style.color = pe<0 ? "var(--bad)" : "";
+  UI.ap.textContent = ap===null ? "—(탈출)" : fmt(ap/1000,0)+" km";
+
+  if(state.mode==="crashed") UI.orbit.textContent="충돌";
+  else if(state.mode==="landing") UI.orbit.textContent="자동 착륙 중";
+  else if(state.mode==="success") UI.orbit.textContent="착륙 완료";
+  else if(alt<0) UI.orbit.textContent="지표면";
+  else if(eps<0 && e<0.03) UI.orbit.textContent="거의 원궤도";
+  else if(eps<0) UI.orbit.textContent="타원 궤도";
+  else UI.orbit.textContent="탈출 궤도";
+
+  // 제어 패널 라벨
+  const deg=angleDegMath();
+  UI.angVal.textContent=deg.toFixed(1)+"°";
+  if(!state.sliderDrag) UI.angle.value=deg.toFixed(1);
+  UI.thrustVal.textContent=(state.thrustPct*100).toFixed(1)+"% · "+currentAccel().toFixed(1)+" m/s²";
+}
+function setStatus(text,cls){ UI.status.textContent=text; UI.status.className="card "+cls; }
+function showMessage(text,ms=1800){
+  UI.message.textContent=text; UI.message.style.opacity="1";
+  clearTimeout(state.messageTimer);
+  state.messageTimer=setTimeout(()=>UI.message.style.opacity="0",ms);
+}
+
+/* ───────── 시작 / 인트로 ───────── */
+function ensureLoop(){ if(!rafId) rafId=requestAnimationFrame(loop); }
+
+function startIntro(){
+  if(state.mode==="intro")return;
+  resetPhysics();
+  state.mode="intro";
+  state.introStart=performance.now();
+  state.last=performance.now();
+  UI.intro.style.display="none";
+  UI.panel.classList.add("disabled");
+  setStatus("자동 발사 인트로","intro");
+  UI.burn.disabled=true; UI.pause.disabled=true;
+  UI.countdown.style.opacity="1";
+  ensureLoop();
+}
+function beginActive(){
+  state.mode="active";
+  state.thrustAngle=Math.atan2(state.vy,state.vx);   // 진행 방향으로 정렬
+  state.hold=null; syncHoldButtons();
+  UI.panel.classList.remove("disabled");
+  UI.burn.disabled=false; UI.pause.disabled=false;
+  setStatus("조작 가능","ready");
+  UI.countdown.style.opacity="0";
+  showMessage("발사 완료 · 별 방향으로 가속해 지구를 벗어나세요",3000);
+}
+function launchIntroPhysics(realDt){
+  const elapsed=(performance.now()-state.introStart)/1000;
+  let desiredSpeed, pitchDeg;
+  if(elapsed<.8){ desiredSpeed=100+elapsed/.8*900; pitchDeg=90; }
+  else if(elapsed<2.8){ const q=(elapsed-.8)/2.0; desiredSpeed=1000+q*6600; pitchDeg=90-q*62; }
+  else if(elapsed<3.9){ const q=(elapsed-2.8)/1.1; desiredSpeed=7600+q*300; pitchDeg=28-q*12; }
+  else{ desiredSpeed=7700; pitchDeg=16; }
+  const targetVx=Math.cos(pitchDeg*Math.PI/180)*desiredSpeed;
+  const targetVy=-Math.sin(pitchDeg*Math.PI/180)*desiredSpeed;
+  const dvx=targetVx-state.vx, dvy=targetVy-state.vy;
+  const aMax=38, len=Math.hypot(dvx,dvy)||1;
+  integrate(realDt,dvx/len*aMax,dvy/len*aMax,true);
+  state.t+=realDt;
+
+  if(elapsed<.7) UI.countdown.textContent="ENGINE IGNITION";
+  else if(elapsed<1.6) UI.countdown.textContent="LIFTOFF";
+  else if(elapsed<3.0) UI.countdown.textContent="GRAVITY TURN";
+  else UI.countdown.textContent="ORBIT INSERTION";
+  if(elapsed>4.4 && state.mode==="intro") beginActive();
+}
+
+/* ───────── 물리 ───────── */
+function integrate(dt,ax,ay,recordTrail){
+  const r=Math.hypot(state.x,state.y);
+  if(r<=W.Re*0.999){ state.mode="crashed"; return; }
+  const gx=-W.mu*state.x/(r*r*r);
+  const gy=-W.mu*state.y/(r*r*r);
+
+  const alt=r-W.Re;
+  let dragX=0,dragY=0;
+  if(alt>0 && alt<W.atmosphere){
+    const rho=1.225*Math.exp(-alt/8500);
+    const speed=Math.hypot(state.vx,state.vy);
+    const drag=.5*rho*speed*speed*2.2/W.mass;
+    if(speed>0){dragX=-state.vx/speed*drag;dragY=-state.vy/speed*drag}
+  }
+
+  const v0x=state.vx, v0y=state.vy;
+  const aX=gx+ax+dragX, aY=gy+ay+dragY;
+  state.x+=v0x*dt+.5*aX*dt*dt;
+  state.y+=v0y*dt+.5*aY*dt*dt;
+
+  const r2=Math.hypot(state.x,state.y);
+  const gx2=-W.mu*state.x/(r2*r2*r2);
+  const gy2=-W.mu*state.y/(r2*r2*r2);
+  const alt2=r2-W.Re;
+  let dx2=0,dy2=0;
+  if(alt2>0 && alt2<W.atmosphere){
+    const rho=1.225*Math.exp(-alt2/8500);
+    const nvx=v0x+aX*dt, nvy=v0y+aY*dt;
+    const speed=Math.hypot(nvx,nvy);
+    const d=.5*rho*speed*speed*2.2/W.mass;
+    if(speed>0){dx2=-nvx/speed*d;dy2=-nvy/speed*d}
+  }
+  state.vx=v0x+.5*(aX+gx2+ax+dx2)*dt;
+  state.vy=v0y+.5*(aY+gy2+ay+dy2)*dt;
+
+  if(recordTrail) pushTrail(r2);
+}
+function pushTrail(r){
+  const last=state.trail[state.trail.length-1];
+  if(!last || Math.hypot(state.x-last.x,state.y-last.y)>Math.max(15000,0.004*r)){
+    state.trail.push({x:state.x,y:state.y});
+    if(state.trail.length>6000) state.trail=state.trail.filter((_,i)=>i%2===0);
+  }
+}
+
+// 적응형 시간 간격: 지구 근처에서는 촘촘하게, 먼 우주에서는 크게. 별 착륙 구역을 건너뛰지 않도록 제한.
+function activeStep(dt){
+  let remaining=dt, guard=0;
+  const accel=state.thrustOn?currentAccel():0;
+  while(remaining>1e-6 && guard++<900){
+    const r=Math.hypot(state.x,state.y);
+    const sp=Math.max(Math.hypot(state.vx,state.vy),1);
+    const T=targetDist();
+    const hMax=Math.min(30,Math.max(.05,0.0006*r/sp));
+    const hT=Math.max(.02,0.25*Math.max(T-state.captureR,state.captureR*.02)/sp);
+    const h=Math.min(remaining,hMax,hT);
+
+    if(state.hold) state.thrustAngle=holdAngle(state.x,state.y,state.vx,state.vy,state.hold);
+    const ax=accel?Math.cos(state.thrustAngle)*accel:0;
+    const ay=accel?Math.sin(state.thrustAngle)*accel:0;
+    integrate(h,ax,ay,true);
+    state.t+=h; remaining-=h;
+    if(state.mode==="crashed")break;
+    if(targetDist()<state.captureR){ startLanding(); break; }
+  }
+}
+
+/* ───────── 자동 착륙 ───────── */
+function startLanding(){
+  const relx=state.x-state.targetX, rely=state.y-state.targetY;
+  state.landing={t:0,dur:9,r0:Math.hypot(relx,rely),a0:Math.atan2(rely,relx),
+                 spin:(randFx()<.5?-1:1)*.45,v0:Math.hypot(state.vx,state.vy),e:0};
+  state.mode="landing";
+  state.thrustOn=false; state.hold=null; syncHoldButtons();
+  UI.burn.textContent="엔진 점화";
+  UI.panel.classList.add("disabled");
+  UI.burn.disabled=true; UI.pause.disabled=true;
+  setStatus("자동 착륙 중","intro");
+  UI.countdown.textContent="AUTO LANDING"; UI.countdown.style.opacity="1";
+  showMessage("착륙 구역 진입 · 자동 착륙 시퀀스를 시작합니다",3000);
+}
+function updateLanding(raw){
+  const L=state.landing;
+  L.t+=raw;
+  const p=Math.min(1,L.t/L.dur);
+  const e=p<.5?4*p*p*p:1-Math.pow(-2*p+2,3)/2;
+  L.e=e;
+  const rad=L.r0+(state.starR-L.r0)*e;
+  const ang=L.a0+L.spin*e;
+  state.x=state.targetX+Math.cos(ang)*rad;
+  state.y=state.targetY+Math.sin(ang)*rad;
+  const sp=L.v0*Math.pow(1-e,2);
+  state.vx=-Math.cos(ang)*sp; state.vy=-Math.sin(ang)*sp;   // 표시용 감속 속도
+  state.t+=raw;
+  pushTrail(Math.hypot(state.x,state.y));
+  if(p>=1) finishLanding();
+}
+function finishLanding(){
+  state.mode="success";
+  state.vx=0; state.vy=0;
+  state.fireworks=[]; state.fireworkStarted=performance.now();
+  UI.countdown.style.opacity="0";
+  setStatus("착륙 성공","ready");
+  const d=state.destination;
+  UI.successDestination.textContent=`${d.host} 표면에 착륙했습니다. 목적지: ${d.planet}`;
+  UI.missionTime.textContent="비행 시간  "+fmt(state.t/60,1)+" min";
+  clearTimeout(state.successTimer);
+  state.successTimer=setTimeout(()=>{UI.success.style.display="grid"},1700);
+}
+
+/* ───────── 궤도 예측 ───────── */
+function predictPath(){
+  const pts=[];
+  let x=state.x,y=state.y,vx=state.vx,vy=state.vy, result="free";
+  const r0=Math.hypot(x,y), sp0=Math.max(Math.hypot(vx,vy),10);
+  const h=Math.min(600,Math.max(1,0.014*r0/sp0));
+  const accel=state.thrustOn?currentAccel():0;
+  for(let i=0;i<520;i++){
+    let ax=0,ay=0;
+    if(accel){
+      const a=state.hold?holdAngle(x,y,vx,vy,state.hold):state.thrustAngle;
+      ax=Math.cos(a)*accel; ay=Math.sin(a)*accel;
+    }
+    let r=Math.hypot(x,y);
+    vx+=(-W.mu*x/(r*r*r)+ax)*h*.5; vy+=(-W.mu*y/(r*r*r)+ay)*h*.5;
+    x+=vx*h; y+=vy*h;
+    r=Math.hypot(x,y);
+    vx+=(-W.mu*x/(r*r*r)+ax)*h*.5; vy+=(-W.mu*y/(r*r*r)+ay)*h*.5;
+    pts.push(x,y);
+    if(r<W.Re*.999){result="impact";break}
+    if(Math.hypot(x-state.targetX,y-state.targetY)<state.captureR){result="intercept";break}
+  }
+  return {pts,result};
+}
+
+/* ───────── 카메라 / 줌 ───────── */
+function starBias(T){
+  const R=state.starR;
+  if(T>=APP*R) return 0;
+  const q=Math.min(1,(APP*R-T)/(APP*R-CAPTURE*R));
+  return q*q*(3-2*q)*.6;
+}
+function isFlying(){ return state.mode!=="idle" && state.mode!=="intro"; }
+function desiredHalfSpan(){
+  let H=W.Re*7.5;
+  if(isFlying()){
+    const r=Math.hypot(state.x,state.y), T=targetDist(), R=state.starR;
+    if(T<APP*R){
+      const k=starBias(T);
+      H=Math.max(1.15*Math.max(k*T,(1-k)*T+R),1.25*R);
+    }else{
+      H=Math.max(W.Re*7.5,1.3*Math.min(r,T));
+    }
+  }
+  return H/state.zoomMul;
+}
+function updateCamera(dt){
+  const lg=Math.log(desiredHalfSpan());
+  state.logH+=(lg-state.logH)*Math.min(1,dt*4);
+  applyScale();
+  if(isFlying()){
+    const T=targetDist();
+    state.kSm+=(starBias(T)-state.kSm)*Math.min(1,dt*4);
+    state.cameraX=state.x+(state.targetX-state.x)*state.kSm;
+    state.cameraY=state.y+(state.targetY-state.y)*state.kSm;
+  }else{
+    const f=Math.min(1,dt*(state.mode==="intro"?2.5:6));
+    const tx=state.mode==="intro"?state.x:0, ty=state.mode==="intro"?state.y:0;
+    state.cameraX+=(tx-state.cameraX)*f;
+    state.cameraY+=(ty-state.cameraY)*f;
+  }
+}
+function zoomBy(f){ state.zoomMul=Math.min(60,Math.max(.03,state.zoomMul*f)); }
+
+/* ───────── 효과 ───────── */
+function spawnMeteor(){
+  const side=Math.floor(randFx()*4);
+  let x,y,vx,vy;
+  if(side===0){x=-80;y=randFx()*ch;vx=180+randFx()*360;vy=-40+randFx()*160}
+  else if(side===1){x=cw+80;y=randFx()*ch;vx=-(180+randFx()*360);vy=-40+randFx()*160}
+  else if(side===2){x=randFx()*cw;y=-80;vx=-100+randFx()*260;vy=180+randFx()*360}
+  else{x=randFx()*cw;y=ch+80;vx=-100+randFx()*260;vy=-(180+randFx()*360)}
+  state.meteors.push({x,y,vx,vy,life:0,max:1.8+randFx()*1.8,len:35+randFx()*75});
+}
+function updateEffects(dt,now){
+  if((state.mode==="active"||state.mode==="paused") && now-state.lastMeteor>2200+randFx()*2600){
+    spawnMeteor(); state.lastMeteor=now;
+  }
+  for(const m of state.meteors){
+    if(state.mode!=="paused"){m.x+=m.vx*dt;m.y+=m.vy*dt;m.life+=dt}
+  }
+  state.meteors=state.meteors.filter(m=>m.life<m.max && m.x>-180 && m.x<cw+180 && m.y>-180 && m.y<ch+180);
+
+  if(state.mode==="success" && state.fireworks.length<900 && now-state.fireworkStarted<2200){
+    const ox=sx(state.x), oy=sy(state.y);
+    for(let burst=0;burst<2;burst++){
+      const hue=Math.floor(randFx()*360);
+      const bx=ox+(randFx()-.5)*140, by=oy+(randFx()-.5)*140;
+      const count=45;
+      for(let i=0;i<count;i++){
+        const a=(i/count)*PI2+randFx()*.15;
+        const speed=45+randFx()*170;
+        state.fireworks.push({x:bx,y:by,vx:Math.cos(a)*speed,vy:Math.sin(a)*speed,
+          life:0,max:.9+randFx()*1.5,size:1.4+randFx()*2.6,hue});
+      }
+    }
+  }
+  for(const f of state.fireworks){
+    f.x+=f.vx*dt; f.y+=f.vy*dt; f.vy+=48*dt; f.vx*=.992; f.vy*=.992; f.life+=dt;
+  }
+  state.fireworks=state.fireworks.filter(f=>f.life<f.max);
+
+  // 속도감: 별들이 진행 반대 방향으로 흐르는 정도
+  const speed=Math.hypot(state.vx,state.vy);
+  let target=0;
+  if(state.mode==="active"||state.mode==="intro"||state.mode==="landing"){
+    target=Math.min(900,60*Math.log10(1+speed*state.effWarp/2000));
+  }
+  state.flowSpeed+=(target-state.flowSpeed)*Math.min(1,dt*5);
+  if(speed>1){ state.flowUx=state.vx/speed; state.flowUy=state.vy/speed; }
+  state.flowX+=-state.flowUx*state.flowSpeed*dt;
+  state.flowY+=-state.flowUy*state.flowSpeed*dt;
+}
+
+/* ───────── 그리기 ───────── */
+function rr(x,y,w,h,r){
+  ctx.beginPath();
+  if(ctx.roundRect) ctx.roundRect(x,y,w,h,r); else ctx.rect(x,y,w,h);
+}
+function drawBackground(){
+  ctx.fillStyle="#050a12";ctx.fillRect(0,0,cw,ch);
+  const fs=state.flowSpeed, ux=state.flowUx, uy=state.flowUy;
+  ctx.strokeStyle="#d9e9ff"; ctx.fillStyle="#d9e9ff";
+  for(const s of state.stars){
+    const x=(((s.x*cw+state.flowX*s.l)%cw)+cw)%cw;
+    const y=(((s.y*ch+state.flowY*s.l)%ch)+ch)%ch;
+    ctx.globalAlpha=s.a;
+    const len=fs*.05*s.l;
+    if(len>1.6){
+      ctx.lineWidth=Math.max(.6,s.r*.9);
+      ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+ux*len,y+uy*len);ctx.stroke();
+    }else{
+      ctx.beginPath();ctx.arc(x,y,s.r,0,PI2);ctx.fill();
+    }
+  }
+  ctx.globalAlpha=1;
+}
+function drawMeteors(){
+  for(const m of state.meteors){
+    const fade=Math.min(1,(m.max-m.life)*2,m.life*4);
+    const sp=Math.hypot(m.vx,m.vy)||1;
+    const tx=m.x-m.vx/sp*m.len, ty=m.y-m.vy/sp*m.len;
+    const grad=ctx.createLinearGradient(tx,ty,m.x,m.y);
+    grad.addColorStop(0,"rgba(255,255,255,0)");
+    grad.addColorStop(.65,`rgba(205,231,255,${.28*fade})`);
+    grad.addColorStop(1,`rgba(255,244,202,${.98*fade})`);
+    ctx.strokeStyle=grad;ctx.lineWidth=2.2;
+    ctx.beginPath();ctx.moveTo(tx,ty);ctx.lineTo(m.x,m.y);ctx.stroke();
+    ctx.fillStyle=`rgba(255,255,235,${fade})`;
+    ctx.beginPath();ctx.arc(m.x,m.y,2.2,0,PI2);ctx.fill();
+  }
+}
+function drawFireworks(){
+  for(const f of state.fireworks){
+    const a=Math.max(0,1-f.life/f.max);
+    ctx.fillStyle=`hsla(${f.hue},100%,${60+20*a}%,${a})`;
+    ctx.beginPath();ctx.arc(f.x,f.y,f.size*a+.3,0,PI2);ctx.fill();
+  }
+}
+
+function drawEarth(){
+  const scale=state.scale;
+  const ex=sx(0), ey=sy(0), rr0=W.Re*scale;
+  if(rr0<3){
+    if(ex>-20&&ex<cw+20&&ey>-20&&ey<ch+20){
+      ctx.fillStyle="#3f9ee0";ctx.beginPath();ctx.arc(ex,ey,3,0,PI2);ctx.fill();
+      ctx.fillStyle="rgba(173,195,219,.9)";ctx.font="10px system-ui";ctx.fillText("지구",ex+7,ey+4);
+    }
+    return;
+  }
+  let g=ctx.createRadialGradient(ex,ey,rr0*.92,ex,ey,rr0*1.23);
+  g.addColorStop(0,"rgba(53,154,225,.18)");g.addColorStop(.65,"rgba(45,129,208,.08)");g.addColorStop(1,"rgba(45,129,208,0)");
+  ctx.fillStyle=g;ctx.beginPath();ctx.arc(ex,ey,rr0*1.25,0,PI2);ctx.fill();
+
+  ctx.save();ctx.beginPath();ctx.arc(ex,ey,rr0,0,PI2);ctx.clip();
+  const eg=ctx.createRadialGradient(ex-rr0*.3,ey-rr0*.38,rr0*.08,ex,ey,rr0*1.05);
+  eg.addColorStop(0,"#2d79b7");eg.addColorStop(.55,"#123d68");eg.addColorStop(1,"#061626");
+  ctx.fillStyle=eg;ctx.fillRect(ex-rr0,ey-rr0,rr0*2,rr0*2);
+  ctx.fillStyle="rgba(95,177,117,.62)";
+  const land=[
+    [[-.55,-.18],[-.35,-.28],[-.12,-.18],[-.16,-.02],[-.35,.03],[-.55,-.18]],
+    [[.05,-.48],[.28,-.4],[.43,-.2],[.32,-.05],[.1,-.12],[-.02,-.3]],
+    [[.22,.1],[.46,.17],[.38,.38],[.18,.48],[.07,.28]]
+  ];
+  for(const poly of land){
+    ctx.beginPath();poly.forEach((p,i)=>{const x=ex+p[0]*rr0,y=ey+p[1]*rr0;i?ctx.lineTo(x,y):ctx.moveTo(x,y)});ctx.closePath();ctx.fill();
+  }
+  ctx.restore();
+  ctx.strokeStyle="rgba(110,199,255,.45)";ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.arc(ex,ey,rr0,0,PI2);ctx.stroke();
+  ctx.strokeStyle="rgba(101,199,255,.22)";ctx.lineWidth=2;
+  ctx.beginPath();ctx.arc(ex,ey,(W.Re+W.atmosphere)*scale,0,PI2);ctx.stroke();
+
+  const px=ex, py=ey-rr0;
+  if(state.t<80){
+    ctx.strokeStyle="#8292a6";ctx.lineWidth=3;
+    ctx.beginPath();ctx.moveTo(px-10,py+5);ctx.lineTo(px-10,py+48);ctx.moveTo(px+10,py+5);ctx.lineTo(px+10,py+48);ctx.stroke();
+    ctx.fillStyle="#53657a";ctx.fillRect(px-22,py+44,44,6);
+  }
+}
+
+function drawTargetStar(now){
+  const d=state.destination; if(!d) return;
+  const t=now/1000, sc=state.scale;
+  const x=sx(state.targetX), y=sy(state.targetY);
+  const sr=Math.max(state.starR*sc,22);
+  const [R,G,B]=d.rgb;
+  const rgba=a=>`rgba(${R},${G},${B},${a})`;
+
+  const bound=sr*4.2;
+  const glowVisible = x+bound>0 && x-bound<cw && y+bound>0 && y-bound<ch;
+  const discVisible = x+sr>-10 && x-sr<cw+10 && y+sr>-10 && y-sr<ch+10;
+
+  if(glowVisible){
+    ctx.save();
+    // 외곽 글로우
+    const g=ctx.createRadialGradient(x,y,sr*.6,x,y,bound);
+    g.addColorStop(0,rgba(.58));g.addColorStop(.25,rgba(.24));g.addColorStop(.6,rgba(.07));g.addColorStop(1,rgba(0));
+    ctx.fillStyle=g;ctx.beginPath();ctx.arc(x,y,bound,0,PI2);ctx.fill();
+
+    // 홍염 / 코로나
+    const F=FLARE[d.visual]||FLARE.orangeDwarf;
+    ctx.fillStyle=rgba(.4);
+    for(let i=0;i<F.n;i++){
+      const a=i/F.n*PI2+t*.03*(i%2?1:-1)+i*.37;
+      const pulse=.5+.5*Math.sin(t*(.8+(i%5)*.3)+i*1.7);
+      const L=sr*(F.base+F.amp*pulse);
+      const w=F.w*(.8+.4*pulse);
+      const x0=x+Math.cos(a-w)*sr*.97, y0=y+Math.sin(a-w)*sr*.97;
+      const x1=x+Math.cos(a+w)*sr*.97, y1=y+Math.sin(a+w)*sr*.97;
+      const tx=x+Math.cos(a)*(sr+L), ty=y+Math.sin(a)*(sr+L);
+      ctx.beginPath();ctx.moveTo(x0,y0);
+      ctx.quadraticCurveTo(x+Math.cos(a-w*.2)*(sr+L*.7),y+Math.sin(a-w*.2)*(sr+L*.7),tx,ty);
+      ctx.quadraticCurveTo(x+Math.cos(a+w*.2)*(sr+L*.7),y+Math.sin(a+w*.2)*(sr+L*.7),x1,y1);
+      ctx.closePath();ctx.fill();
+    }
+
+    // 항성 본체 (주변부 어두워짐)
+    const disc=ctx.createRadialGradient(x-sr*.28,y-sr*.28,sr*.05,x,y,sr);
+    disc.addColorStop(0,d.core);disc.addColorStop(.3,d.starColor);disc.addColorStop(.8,d.starColor);disc.addColorStop(1,d.rim);
+    ctx.fillStyle=disc;ctx.beginPath();ctx.arc(x,y,sr,0,PI2);ctx.fill();
+
+    // 흑점
+    ctx.save();ctx.beginPath();ctx.arc(x,y,sr,0,PI2);ctx.clip();
+    ctx.fillStyle="rgba(40,10,5,.2)";
+    for(const s of state.spots){
+      const a=s.a+t*.02;
+      ctx.beginPath();ctx.arc(x+Math.cos(a)*s.rr*sr,y+Math.sin(a)*s.rr*sr,s.sz*sr,0,PI2);ctx.fill();
+    }
+    ctx.restore();
+
+    // 가장자리 코로나 링
+    ctx.strokeStyle=rgba(.55);ctx.lineWidth=Math.max(1.5,sr*.012);
+    ctx.beginPath();ctx.arc(x,y,sr*1.03,0,PI2);ctx.stroke();
+    ctx.restore();
+
+    // 착륙 구역
+    if(state.mode==="active"||state.mode==="paused"){
+      const cr=state.captureR*sc;
+      ctx.save();
+      ctx.setLineDash([10,8]);ctx.lineWidth=2;ctx.strokeStyle="rgba(255,209,102,.5)";
+      ctx.beginPath();ctx.arc(x,y,cr,0,PI2);ctx.stroke();
+      ctx.setLineDash([]);
+      if(cr>60 && y-cr>96){
+        ctx.fillStyle="rgba(255,209,102,.85)";ctx.font="700 11px system-ui";ctx.textAlign="center";
+        ctx.fillText("자동 착륙 구역",x,y-cr-8);
+      }
+      ctx.restore();
+    }
+
+    // 이름표
+    if(y-sr-28>96 && x>40 && x<cw-40){
+      ctx.save();ctx.textAlign="center";
+      ctx.fillStyle="rgba(255,244,214,.96)";ctx.font="800 14px system-ui";
+      ctx.fillText(d.planet,x,y-sr-30);
+      ctx.fillStyle="rgba(173,195,219,.9)";ctx.font="11px system-ui";
+      ctx.fillText(`${d.host} · ${d.distanceLy} ly`,x,y-sr-14);
+      ctx.restore();
+    }
+  }
+
+  // 화면 밖이면 방향 화살표 + 거리
+  if(!discVisible){
+    const cx=cw/2, cy=ch/2;
+    const dx=x-cx, dy=y-cy;
+    const k=Math.min((cw/2-34)/Math.max(Math.abs(dx),1e-6),(ch/2-60)/Math.max(Math.abs(dy),1e-6));
+    const ax=cx+dx*k, ay=cy+dy*k, ang=Math.atan2(dy,dx);
+    ctx.save();ctx.translate(ax,ay);ctx.rotate(ang);
+    ctx.fillStyle=d.starColor;ctx.shadowColor=rgba(.9);ctx.shadowBlur=12;
+    ctx.beginPath();ctx.moveTo(16,0);ctx.lineTo(-10,-9);ctx.lineTo(-10,9);ctx.closePath();ctx.fill();
+    ctx.restore();
+    ctx.save();
+    const left=ax>cw/2;
+    ctx.textAlign=left?"right":"left";
+    const tx=left?ax-22:ax+22;
+    ctx.fillStyle="rgba(255,244,214,.92)";ctx.font="800 11px system-ui";
+    ctx.fillText(d.planet,tx,ay-3);
+    ctx.fillStyle="rgba(173,195,219,.9)";ctx.font="10px system-ui";
+    ctx.fillText(fmt(Math.max(0,targetDist()-state.starR)/1000,0)+" km",tx,ay+10);
+    ctx.restore();
+  }
+}
+
+function drawRouteMap(){
+  const mw=Math.min(230,cw*.32), mh=110, mx=cw-mw-12, my=78;
+  ctx.save();
+  ctx.fillStyle="rgba(8,16,28,.82)";ctx.strokeStyle="rgba(112,151,190,.25)";ctx.lineWidth=1;
+  rr(mx,my,mw,mh,12);ctx.fill();ctx.stroke();
+  ctx.fillStyle="#91a5bd";ctx.font="700 10px system-ui";ctx.fillText("MISSION MAP",mx+10,my+15);
+
+  const cx=mx+mw/2, cy=my+mh/2+7;
+  const maxR=Math.max(Math.hypot(state.targetX,state.targetY),W.Re)*1.12;
+  const mapX=v=>cx+(v.x/maxR)*(mw*.40);
+  const mapY=v=>cy+(v.y/maxR)*(mh*.35);
+  const tp={x:state.targetX,y:state.targetY};
+
+  ctx.setLineDash([4,4]);ctx.strokeStyle="rgba(255,209,102,.28)";
+  ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(mapX(tp),mapY(tp));ctx.stroke();
+  ctx.setLineDash([]);
+
+  if(state.trail.length>1){
+    ctx.strokeStyle="rgba(101,199,255,.75)";ctx.lineWidth=1.5;ctx.beginPath();
+    const step=Math.max(1,Math.floor(state.trail.length/250));
+    for(let i=0;i<state.trail.length;i+=step){
+      const q=state.trail[i];
+      i?ctx.lineTo(mapX(q),mapY(q)):ctx.moveTo(mapX(q),mapY(q));
+    }
+    const lq=state.trail[state.trail.length-1];
+    ctx.lineTo(mapX(lq),mapY(lq));
+    ctx.stroke();
+  }
+  ctx.fillStyle="#2d79b7";ctx.beginPath();ctx.arc(cx,cy,5,0,PI2);ctx.fill();
+  ctx.fillStyle="#ffd166";ctx.beginPath();ctx.arc(mapX(tp),mapY(tp),6,0,PI2);ctx.fill();
+  ctx.fillStyle="#edf5ff";ctx.beginPath();ctx.arc(mapX(state),mapY(state),3,0,PI2);ctx.fill();
+  ctx.restore();
+}
+
+function drawTrail(){
+  const n=state.trail.length;
+  if(n<2)return;
+  const path=(from)=>{
+    ctx.beginPath();
+    for(let i=from;i<n;i++){
+      const p=state.trail[i],x=sx(p.x),y=sy(p.y);
+      i===from?ctx.moveTo(x,y):ctx.lineTo(x,y);
+    }
+    ctx.stroke();
+  };
+  ctx.lineWidth=1.6;ctx.strokeStyle="rgba(101,199,255,.3)";path(0);
+  ctx.lineWidth=2.4;ctx.strokeStyle="rgba(130,215,255,.75)";path(Math.max(0,n-700));
+}
+
+function drawPrediction(){
+  if(!state.showPred) return;
+  if(state.mode!=="active" && state.mode!=="paused") return;
+  const {pts,result}=predictPath();
+  if(pts.length<4) return;
+  const col=result==="impact"?"255,107,107":result==="intercept"?"101,230,161":"255,209,102";
+  ctx.save();
+  ctx.setLineDash([6,6]);ctx.lineWidth=2;ctx.strokeStyle=`rgba(${col},.85)`;
+  ctx.beginPath();ctx.moveTo(sx(state.x),sy(state.y));
+  for(let i=0;i<pts.length;i+=2) ctx.lineTo(sx(pts[i]),sy(pts[i+1]));
+  ctx.stroke();ctx.setLineDash([]);
+  const ex=sx(pts[pts.length-2]), ey=sy(pts[pts.length-1]);
+  if(result!=="free"){
+    ctx.strokeStyle=`rgba(${col},1)`;ctx.lineWidth=2.5;
+    if(result==="impact"){
+      ctx.beginPath();ctx.moveTo(ex-7,ey-7);ctx.lineTo(ex+7,ey+7);ctx.moveTo(ex+7,ey-7);ctx.lineTo(ex-7,ey+7);ctx.stroke();
+    }else{
+      ctx.beginPath();ctx.arc(ex,ey,8,0,PI2);ctx.stroke();
+    }
+  }
+  ctx.restore();
+}
+
+function drawVector(){
+  if(state.mode!=="active" && state.mode!=="paused")return;
+  const x=sx(state.x),y=sy(state.y);
+  const len=80+state.thrustPct*80;
+  const ex=x+Math.cos(state.thrustAngle)*len,ey=y+Math.sin(state.thrustAngle)*len;
+  ctx.save();
+  ctx.strokeStyle="rgba(101,199,255,.9)";ctx.fillStyle="rgba(101,199,255,.9)";
+  ctx.lineWidth=3;ctx.setLineDash([7,5]);
+  ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(ex,ey);ctx.stroke();ctx.setLineDash([]);
+  const a=Math.atan2(ey-y,ex-x);
+  ctx.beginPath();ctx.moveTo(ex,ey);ctx.lineTo(ex-13*Math.cos(a-.45),ey-13*Math.sin(a-.45));
+  ctx.lineTo(ex-13*Math.cos(a+.45),ey-13*Math.sin(a+.45));ctx.closePath();ctx.fill();
+  const names={pro:"순행 유지",retro:"역행 유지",star:"별 방향 유지",out:"지구 반대 유지",in:"지구 방향 유지"};
+  ctx.font="700 11px system-ui";ctx.textAlign="center";
+  ctx.fillText(angleDegMath().toFixed(1)+"°"+(state.hold?" · "+names[state.hold]:""),ex+Math.cos(a)*34,ey+Math.sin(a)*20);
+  // 위치 표시 링
+  ctx.strokeStyle="rgba(101,199,255,.35)";ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.arc(x,y,24+2*Math.sin(performance.now()/300),0,PI2);ctx.stroke();
+  ctx.restore();
+}
+
+function drawRocket(){
+  const x=sx(state.x),y=sy(state.y);
+  let heading, sz=1;
+  if(state.mode==="active"||state.mode==="paused"){
+    heading=state.thrustAngle;
+  }else if(state.mode==="landing"||state.mode==="success"){
+    heading=Math.atan2(state.targetY-state.y,state.targetX-state.x);
+    sz=state.mode==="success"?.65:1-.35*(state.landing?state.landing.e:0);
+  }else{
+    heading=Math.atan2(state.vy,state.vx);
+  }
+  const flameOn=(state.thrustOn&&(state.mode==="active"||state.mode==="paused")) || state.mode==="intro";
+  const flame=state.thrustOn ? 14+state.thrustPct*30 : 12;
+  ctx.save();ctx.translate(x,y);ctx.rotate(heading);ctx.scale(sz,sz);
+  if(flameOn){
+    const grad=ctx.createLinearGradient(-22,0,-22-flame,0);
+    grad.addColorStop(0,"rgba(255,236,130,.95)");grad.addColorStop(.55,"rgba(255,145,48,.8)");grad.addColorStop(1,"rgba(255,72,36,0)");
+    ctx.fillStyle=grad;
+    const wob=1+.12*Math.sin(performance.now()/45);
+    ctx.beginPath();ctx.moveTo(-16,-5);ctx.quadraticCurveTo(-22,-10,-22-flame*wob,0);
+    ctx.quadraticCurveTo(-22,10,-16,5);ctx.closePath();ctx.fill();
+  }
+  ctx.fillStyle="#b9c7d8";
+  ctx.beginPath();ctx.moveTo(-7,-8);ctx.lineTo(-22,-16);ctx.lineTo(-18,-2);ctx.closePath();ctx.fill();
+  ctx.beginPath();ctx.moveTo(-7,8);ctx.lineTo(-22,16);ctx.lineTo(-18,2);ctx.closePath();ctx.fill();
+  const body=ctx.createLinearGradient(-18,0,18,0);
+  body.addColorStop(0,"#687b91");body.addColorStop(.55,"#edf5ff");body.addColorStop(1,"#8fa5ba");
+  ctx.fillStyle=body;ctx.strokeStyle="#dcecff";ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(-20,-6);ctx.lineTo(7,-6);ctx.quadraticCurveTo(18,0,7,6);ctx.lineTo(-20,6);ctx.closePath();ctx.fill();ctx.stroke();
+  ctx.fillStyle="#e8f1fb";ctx.beginPath();ctx.moveTo(7,-6);ctx.quadraticCurveTo(23,0,7,6);ctx.closePath();ctx.fill();
+  ctx.fillStyle="#173c5a";ctx.strokeStyle="#75cfff";
+  ctx.beginPath();ctx.arc(2,0,4.2,0,PI2);ctx.fill();ctx.stroke();
+  ctx.strokeStyle="rgba(30,55,80,.65)";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(-12,-6);ctx.lineTo(-12,6);ctx.stroke();
+  ctx.restore();
+}
+
+function draw(now){
+  drawBackground();
+  drawMeteors();
+  drawEarth();
+  drawTargetStar(now);
+  drawPrediction();
+  drawTrail();
+  drawVector();
+  drawRocket();
+  drawFireworks();
+  drawRouteMap();
+}
+
+/* ───────── 메인 루프 ───────── */
+function loop(now){
+  rafId=0;
+  const raw=Math.min(.05,(now-state.last)/1000||.016);
+  state.last=now;
+  let capped=false, mult=1;
+
+  if(state.mode==="intro"){
+    state.effWarp=1;
+    launchIntroPhysics(raw);
+  }else if(state.mode==="active"){
+    mult=MULTS[Number(UI.time.value)];
+    if(targetDist()<6*state.starR && mult>20){ mult=20; capped=true; }
+    state.effWarp=mult;
+    activeStep(raw*mult);
+  }else if(state.mode==="landing"){
+    state.effWarp=1;
+    updateLanding(raw);
+  }else{
+    state.effWarp=1;
+  }
+  UI.timeVal.textContent=LABELS[Number(UI.time.value)]+(capped?" → 20× (별 접근 감속)":"");
+
+  if(state.mode==="crashed" && !state.crashShown){
+    state.crashShown=true;
+    setStatus("지구와 충돌","intro");
+    showMessage("궤도 유지에 실패했습니다. 다시 시작해 보세요.",4000);
+  }
+  updateEffects(raw,now);
+  updateCamera(raw);
+  updateUI();
+  draw(now);
+  if(state.mode!=="idle") ensureLoop();
+}
+
+/* ───────── 입력 ───────── */
+UI.start.addEventListener("click",startIntro);
+
+function openControls(){UI.controlsModal.style.display="grid"}
+function closeControls(){UI.controlsModal.style.display="none"}
+UI.controls.addEventListener("click",openControls);
+UI.closeControls.addEventListener("click",closeControls);
+UI.closeControls2.addEventListener("click",closeControls);
+UI.controlsModal.addEventListener("pointerdown",e=>{if(e.target===UI.controlsModal)closeControls()});
+
+function toLaunchScreen(){
+  clearTimeout(state.successTimer);
+  UI.success.style.display="none";
+  UI.intro.style.display="grid";
+  UI.panel.classList.add("disabled");
+  UI.countdown.style.opacity="0";
+  UI.burn.disabled=true; UI.pause.disabled=true;
+  UI.pause.textContent="일시정지"; UI.burn.textContent="엔진 점화";
+  resetPhysics(); syncHoldButtons(); updateUI(); draw(performance.now());
+  setStatus("발사 준비 중","intro");
+}
+UI.restartSuccess.addEventListener("click",toLaunchScreen);
+UI.reset.addEventListener("click",toLaunchScreen);
+
+function isFlightMode(){ return state.mode==="active"||state.mode==="paused"; }
+
+UI.burn.addEventListener("click",toggleBurn);
+function toggleBurn(){
+  if(!isFlightMode())return;
+  state.thrustOn=!state.thrustOn;
+  UI.burn.textContent=state.thrustOn?"엔진 정지":"엔진 점화";
+  showMessage(state.thrustOn?"추력 발생":"추력 중단",900);
+}
+UI.pause.addEventListener("click",()=>{
+  if(state.mode==="active"){
+    state.mode="paused";UI.pause.textContent="계속";setStatus("일시정지","intro");
+  }else if(state.mode==="paused"){
+    state.mode="active";UI.pause.textContent="일시정지";setStatus("조작 가능","ready");
+  }
+});
+UI.trail.addEventListener("click",()=>{state.trail=[]});
+
+UI.thrust.addEventListener("input",()=>{ state.thrustPct=thrustFrac(); });
+state.thrustPct=thrustFrac();
+
+UI.time.addEventListener("input",()=>{ UI.timeVal.textContent=LABELS[Number(UI.time.value)]; });
+
+UI.engine.addEventListener("click",()=>{
+  state.engine=(state.engine+1)%W.engines.length;
+  const en=W.engines[state.engine];
+  UI.engine.textContent="엔진: "+en.name;
+  showMessage(`${en.name} · 최대 가속 ${(en.N/W.mass).toFixed(0)} m/s²`,1600);
+});
+UI.predict.addEventListener("click",()=>{
+  state.showPred=!state.showPred;
+  UI.predict.textContent=state.showPred?"예측선 ON":"예측선 OFF";
+  UI.predict.classList.toggle("on",state.showPred);
+});
+UI.collapse.addEventListener("click",()=>{
+  UI.panel.classList.toggle("collapsed");
+  UI.collapse.textContent=UI.panel.classList.contains("collapsed")?"▴":"▾";
+});
+
+// 점화 방향 슬라이더 / 미세 조정 / 방향 고정
+UI.angle.addEventListener("pointerdown",()=>{state.sliderDrag=true});
+addEventListener("pointerup",()=>{state.sliderDrag=false});
+UI.angle.addEventListener("input",()=>{
+  state.hold=null; syncHoldButtons();
+  state.thrustAngle=-Number(UI.angle.value)*Math.PI/180;
+});
+document.querySelectorAll("[data-nudge]").forEach(b=>
+  b.addEventListener("click",()=>nudge(Number(b.dataset.nudge))));
+document.querySelectorAll("[data-hold]").forEach(b=>
+  b.addEventListener("click",()=>{
+    state.hold=b.dataset.hold||null;
+    if(state.hold) state.thrustAngle=holdAngle(state.x,state.y,state.vx,state.vy,state.hold);
+    syncHoldButtons();
+  }));
+
+// 줌
+UI.zoomIn.addEventListener("click",()=>zoomBy(1.6));
+UI.zoomOut.addEventListener("click",()=>zoomBy(1/1.6));
+UI.zoomAuto.addEventListener("click",()=>{state.zoomMul=1});
+canvas.addEventListener("wheel",e=>{e.preventDefault();zoomBy(Math.exp(-e.deltaY*.0015))},{passive:false});
+
+// 캔버스 드래그로 점화 방향 지정
+function aimAt(e){
+  state.hold=null; syncHoldButtons();
+  const dx=e.clientX-sx(state.x), dy=e.clientY-sy(state.y);
+  if(Math.hypot(dx,dy)>6) state.thrustAngle=Math.atan2(dy,dx);
+}
+canvas.addEventListener("pointerdown",e=>{
+  if(!isFlightMode())return;
+  state.drag=true;
+  try{canvas.setPointerCapture(e.pointerId)}catch(_){}
+  aimAt(e);
+});
+canvas.addEventListener("pointermove",e=>{ if(state.drag) aimAt(e); });
+canvas.addEventListener("pointerup",e=>{state.drag=false;try{canvas.releasePointerCapture(e.pointerId)}catch(_){}});
+canvas.addEventListener("pointercancel",()=>{state.drag=false});
+
+// 키보드
+addEventListener("keydown",e=>{
+  if(e.target&&e.target.tagName==="INPUT")return;
+  if(!isFlightMode())return;
+  const big=e.shiftKey?10:1;
+  switch(e.key){
+    case "ArrowLeft":  nudge(big); e.preventDefault(); break;
+    case "ArrowRight": nudge(-big); e.preventDefault(); break;
+    case " ":          toggleBurn(); e.preventDefault(); break;
+    case "+": case "=": zoomBy(1.4); break;
+    case "-": case "_": zoomBy(1/1.4); break;
+  }
+});
+
+resize();
+resetPhysics();
+syncHoldButtons();
+updateUI();
+draw(performance.now());
+</script>
+</body>
+</html>
+

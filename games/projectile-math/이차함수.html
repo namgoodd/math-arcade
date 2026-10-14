@@ -1,307 +1,1117 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>이차함수 포격 게임</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
-  <style>
-    body {
-      margin: 0;
-      padding: 20px;
-      font-family: -apple-system, BlinkMacSystemFont, "Pretendard", "Segoe UI", Roboto, sans-serif;
-      background: #f4f6f8;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-    #game-container {
-      background: #ffffff;
-      border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-      overflow: hidden;
-    }
-    .nav-bar {
-      width: 800px;
-      margin-bottom: 10px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 14px;
-    }
-    .back-btn {
-      text-decoration: none;
-      color: #2c3e50;
-      font-weight: bold;
-      padding: 6px 12px;
-      background: #e2e8f0;
-      border-radius: 4px;
-    }
-    #controls {
-      margin-top: 15px;
-      display: flex;
-      gap: 18px;
-      align-items: center;
-      flex-wrap: wrap;
-      justify-content: center;
-      background: #ffffff;
-      padding: 12px 20px;
-      border-radius: 8px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
-      font-size: 14px;
-    }
-    .ctrl-group { display: flex; align-items: center; gap: 6px; }
-    .ctrl-value {
-      font-family: "Courier New", monospace;
-      font-weight: bold;
-      min-width: 52px;
-      color: #2b6cb0;
-    }
-    button {
-      padding: 8px 16px;
-      cursor: pointer;
-      border: none;
-      border-radius: 4px;
-      font-weight: bold;
-      background: #3182ce;
-      color: white;
-    }
-    button:hover { background: #2b6cb0; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>이차함수 포격전</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+<style>
+  :root {
+    --primary: #3182ce;
+    --primary-hover: #2b6cb0;
+    --ink: #1e293b;
+    --sub: #64748b;
+    --line: #e2e8f0;
+    --bg: #f4f6f8;
+    --good: #16a34a;
+    --bad: #dc2626;
+    --gold: #f59e0b;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 14px 16px 24px;
+    font-family: -apple-system, BlinkMacSystemFont, "Pretendard", "Malgun Gothic", "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    display: flex;
+    justify-content: center;
+  }
+  .wrap { width: 800px; }
+
+  .nav-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    font-size: 13px;
+    color: #334155;
+  }
+  .back-btn {
+    text-decoration: none;
+    color: #2c3e50;
+    font-weight: 700;
+    padding: 6px 12px;
+    background: #e2e8f0;
+    border-radius: 6px;
+  }
+  .back-btn:hover { background: #cbd5e1; }
+
+  /* 상단 패널: 난이도 + 문제 */
+  .panel {
+    background: #fff;
+    border-radius: 10px;
+    padding: 12px 16px 10px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+    margin-bottom: 10px;
+  }
+  .mode-row { display: flex; align-items: center; gap: 10px; }
+  .mode-label { font-size: 12px; font-weight: 800; color: var(--sub); }
+  .seg {
+    display: flex;
+    background: #f1f5f9;
+    border-radius: 9px;
+    padding: 3px;
+    gap: 3px;
+  }
+  .seg button {
+    border: none;
+    background: transparent;
+    border-radius: 7px;
+    padding: 6px 12px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    color: #475569;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .seg button small { font-size: 10.5px; font-weight: 700; color: #94a3b8; margin-left: 3px; }
+  .seg button:hover { color: var(--primary); }
+  .seg button.active { background: #fff; color: var(--primary); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12); }
+  .seg button.active small { color: var(--primary); }
+  .score { margin-left: auto; font-size: 13px; font-weight: 800; color: #334155; white-space: nowrap; }
+
+  .mission-row { display: flex; align-items: flex-start; gap: 10px; margin-top: 10px; }
+  .mission-text { flex: 1; font-size: 15px; margin: 0; color: #0f172a; font-weight: 600; }
+  .chips { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 6px; min-height: 20px; }
+  .chip { font-size: 11.5px; font-weight: 700; padding: 2px 8px; border-radius: 20px; background: #f1f5f9; color: #475569; }
+  .chip.wall { background: #ffedd5; color: #9a3412; }
+  .chip.ceiling { background: #e2e8f0; color: #334155; }
+  .chip.hoop { background: #f3e8ff; color: #7e22ce; }
+  .chip.lock { background: #e0e7ff; color: #3730a3; }
+  .btn-hint {
+    border: 1px solid #fcd34d;
+    background: #fffbeb;
+    color: #92400e;
+    font-weight: 700;
+    font-size: 12px;
+    border-radius: 6px;
+    padding: 4px 10px;
+    cursor: pointer;
+    font-family: inherit;
+    white-space: nowrap;
+  }
+  .btn-hint:hover { background: #fef3c7; }
+  .hint-text {
+    display: none;
+    margin-top: 8px;
+    font-size: 13px;
+    color: #475569;
+    background: #fffbeb;
+    border-left: 3px solid var(--gold);
+    padding: 7px 10px;
+    border-radius: 4px;
+  }
+  .status { margin-top: 7px; font-size: 13.5px; font-weight: 700; min-height: 20px; color: #475569; }
+  .status.good { color: var(--good); }
+  .status.bad { color: var(--bad); }
+
+  /* 게임 화면 */
+  #game-container {
+    position: relative;
+    width: 800px;
+    height: 450px;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+  }
+  #game-container canvas { display: block; }
+
+  .overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(15, 23, 42, 0.45);
+  }
+  .overlay.show { display: flex; }
+  .clear-card {
+    width: 480px;
+    background: #fff;
+    border-radius: 14px;
+    padding: 20px 24px 18px;
+    text-align: center;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+    animation: pop 0.25s ease-out;
+  }
+  @keyframes pop { from { transform: scale(0.85); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .clear-title { font-size: 21px; font-weight: 800; color: #0f172a; }
+  .clear-stars { font-size: 36px; color: var(--gold); letter-spacing: 6px; line-height: 1.2; margin: 4px 0; }
+  .clear-stars .off { color: #e2e8f0; }
+  .clear-meta { font-size: 13px; color: var(--sub); }
+  .solution {
+    text-align: left;
+    background: #f8fafc;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 13px;
+    color: #334155;
+    margin: 12px 0 14px;
+    line-height: 1.7;
+  }
+  .clear-actions { display: flex; gap: 10px; justify-content: center; }
+
+  /* 조작부 */
+  #controls {
+    margin-top: 10px;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    background: #fff;
+    padding: 11px 16px;
+    border-radius: 10px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+    font-size: 14px;
+  }
+  .coef { display: flex; align-items: center; gap: 8px; }
+  .coef-name { font-family: "Times New Roman", Georgia, serif; font-style: italic; font-size: 21px; font-weight: 700; color: #1e3a8a; }
+  .coef input[type=range] { width: 110px; accent-color: var(--primary); }
+  .coef input[type=text] {
+    width: 78px;
+    padding: 6px 8px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    font-family: "Courier New", monospace;
+    font-weight: 700;
+    font-size: 15px;
+    color: #1d4ed8;
+    outline: none;
+  }
+  .coef input[type=text]:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.15); }
+  .coef input[type=text]:disabled { background: #eef2ff; color: #3730a3; border-color: #c7d2fe; }
+  .coef input.err { border-color: var(--bad); animation: shake 0.3s; }
+  @keyframes shake { 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
+  .toggle { display: flex; align-items: center; gap: 5px; font-size: 13px; color: #475569; cursor: pointer; }
+
+  .btn {
+    border: none;
+    border-radius: 8px;
+    font-weight: 800;
+    font-size: 14px;
+    cursor: pointer;
+    padding: 9px 16px;
+    font-family: inherit;
+  }
+  .btn-fire { background: #e53e3e; color: #fff; padding: 10px 18px; font-size: 15px; box-shadow: 0 3px 0 #9b2c2c; }
+  .btn-fire:hover { background: #c53030; }
+  .btn-fire:active { transform: translateY(2px); box-shadow: 0 1px 0 #9b2c2c; }
+  .btn-primary { background: var(--primary); color: #fff; }
+  .btn-primary:hover { background: var(--primary-hover); }
+  .btn-ghost { background: #f1f5f9; color: #334155; }
+  .btn-ghost:hover { background: #e2e8f0; }
+  .keys { text-align: center; font-size: 12px; color: #94a3b8; margin: 8px 0 0; }
+</style>
 </head>
 <body>
+<div class="wrap">
 
   <div class="nav-bar">
     <a href="../../index.html" target="_top" class="back-btn">← 메인 허브로 돌아가기</a>
-    <span><strong>수학 개념:</strong> 이차함수의 그래프 · 꼭짓점 · 근 · 미분계수</span>
+    <span><strong>수학 개념:</strong> 이차함수 · 꼭짓점 · 근 · 연립방정식 · 미분계수</span>
   </div>
 
-  <div id="game-container"></div>
-  <div id="controls"></div>
+  <div class="panel">
+    <div class="mode-row">
+      <span class="mode-label">난이도</span>
+      <div class="seg" id="modeSeg">
+        <button data-mode="slider">🎚 슬라이더<small>쉬움</small></button>
+        <button data-mode="aOnly">✏️ a만 입력<small>보통</small></button>
+        <button data-mode="ab">🧮 a, b 입력<small>어려움</small></button>
+      </div>
+      <span class="score" id="score"></span>
+    </div>
+    <div class="mission-row">
+      <p class="mission-text" id="missionText"></p>
+      <button class="btn-hint" id="hintBtn">💡 힌트</button>
+    </div>
+    <div class="chips" id="chips"></div>
+    <div class="hint-text" id="hintText"></div>
+    <div class="status" id="status"></div>
+  </div>
 
-  <script>
-    const CANVAS_W = 800;
-    const CANVAS_H = 450;
-    const ORIGIN_X = 60;
-    const GROUND_Y = 380;
+  <div id="game-container">
+    <div class="overlay" id="overlay">
+      <div class="clear-card">
+        <div class="clear-title">🎯 명중!</div>
+        <div class="clear-stars" id="clearStars"></div>
+        <div class="clear-meta" id="clearMeta"></div>
+        <div class="solution" id="clearSolution"></div>
+        <div class="clear-actions">
+          <button class="btn btn-ghost" id="retryBtn">↺ 같은 문제 다시</button>
+          <button class="btn btn-primary" id="nextBtn">🎲 새 타깃 ▶</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
-    let sliderA, sliderB;
-    let labelA, labelB;
-    let btnFire, btnReset;
+  <div id="controls">
+    <div class="coef">
+      <span class="coef-name">a</span>
+      <input type="range" id="sliderA" min="0.02" max="1" step="0.005">
+      <input type="text" id="inputA" inputmode="decimal" autocomplete="off" placeholder="예: 1/4">
+    </div>
+    <div class="coef">
+      <span class="coef-name">b</span>
+      <input type="range" id="sliderB" min="0.1" max="4" step="0.05">
+      <input type="text" id="inputB" inputmode="decimal" autocomplete="off" placeholder="예: 1.5">
+    </div>
+    <label class="toggle" id="previewToggle"><input type="checkbox" id="fullPreview" checked> 전체 궤적</label>
+    <button class="btn btn-fire" id="fireBtn">🔥 발사</button>
+    <button class="btn btn-ghost" id="newBtn">🎲 새 타깃</button>
+  </div>
+  <p class="keys">Space / Enter: 발사 · N: 새 타깃 · 분수 입력 가능 (예: 1/8, 7/4)</p>
+</div>
 
-    let target = { x: 550, y: 130, r: 25 };
-    let obstacle = { x: 280, w: 25, h: 160 };
+<script>
+/* =====================================================================
+   좌표계
+   - 수학 좌표 1칸 = 화면 50px, 대포 = 원점 (0, 0), 지면 = x축
+   - 포탄 궤적:  y = -a x² + b x   (a > 0, b > 0)
+       · b = y'(0)  → 발사 기울기 (tan θ)
+       · 근 x = 0, b/a → 착지점 x = b/a
+       · 꼭짓점 (b/2a, b²/4a) → 최고 높이
+   ===================================================================== */
+const W = 800, H = 450;
+const SCALE = 50;
+const OX = 50;
+const GY = 410;
+const X_MAX = (W - OX) / SCALE;   // 15
+const Y_MAX = GY / SCALE;         // 8.2
+const STEP = 0.1;
+const PARTIAL_LEN = 2.2;
 
-    let projectile = { x: 0, y: 0, active: false };
-    let statusMessage = "계수를 조절한 뒤 발사하세요.";
-    let shots = 0;
-    let hits = 0;
+const toSX = (x) => OX + x * SCALE;
+const toSY = (y) => GY - y * SCALE;
+const yAt = (a, b, x) => -a * x * x + b * x;
+const clean = (v) => Math.round(v * 1e6) / 1e6;
+const fmt = (v) => (isFinite(v) ? String(Math.round(v * 1000) / 1000) : "?");
+const isQuarter = (v) => Math.abs(v * 4 - Math.round(v * 4)) < 1e-6;
 
-    function setup() {
-      const canvas = createCanvas(CANVAS_W, CANVAS_H);
-      canvas.parent("game-container");
+// 0.125 → "1/8 (= 0.125)", 0.1 → "0.1"
+function frac(v) {
+  const s = fmt(v);
+  if (!s.includes(".") || s.split(".")[1].length <= 1) return s;
+  for (let d = 2; d <= 32; d++) {
+    const n = v * d;
+    if (Math.abs(n - Math.round(n)) < 1e-9) return `${Math.round(n)}/${d} (= ${s})`;
+  }
+  return s;
+}
 
-      const ctrlDiv = select("#controls");
+/* =====================================================================
+   문제 생성
+   "정답 포물선"을 먼저 정하고, 과녁·링은 그 위에, 벽은 아래에,
+   천장은 위에 배치 → 항상 풀 수 있고 숫자가 깔끔하게 나옴
+   ===================================================================== */
+const NICE_A = [0.05, 0.08, 0.1, 0.125, 0.15, 0.2, 0.25, 0.3, 0.4, 0.5];
+const NICE_B = [1, 1.25, 1.5, 1.75, 2, 2.25, 2.5, 3];
 
-      // a 슬라이더: y = -ax² + bx 에서 이차항 계수 (클수록 포물선이 좁고 급하게 꺾임)
-      const groupA = createDiv("").addClass("ctrl-group").parent(ctrlDiv);
-      createSpan("a (이차항 계수)").parent(groupA);
-      sliderA = createSlider(0.0005, 0.003, 0.0014, 0.0001);
-      sliderA.parent(groupA);
-      labelA = createSpan("").addClass("ctrl-value").parent(groupA);
-
-      // b 슬라이더: x = 0 에서의 접선의 기울기 y'(0) = b (발사 각도)
-      const groupB = createDiv("").addClass("ctrl-group").parent(ctrlDiv);
-      createSpan("b (발사 기울기)").parent(groupB);
-      sliderB = createSlider(0.5, 2.5, 1.3, 0.05);
-      sliderB.parent(groupB);
-      labelB = createSpan("").addClass("ctrl-value").parent(groupB);
-
-      btnFire = createButton("발사");
-      btnFire.parent(ctrlDiv);
-      btnFire.mousePressed(fireProjectile);
-
-      btnReset = createButton("새 타깃");
-      btnReset.parent(ctrlDiv);
-      btnReset.mousePressed(resetTarget);
+const CANDIDATES = (() => {
+  const list = [];
+  for (const a of NICE_A) for (const b of NICE_B) {
+    const L = b / a, Hm = (b * b) / (4 * a);
+    if (Hm < 1.5 || Hm > 7.2) continue;
+    for (let x = 5; x <= 14; x++) {
+      if (x > L + 1e-9) break;
+      if (Math.abs(x - L) < 1e-9) { list.push({ a, b, tx: x, ty: 0, ground: true }); continue; }
+      const y = clean(yAt(a, b, x));
+      if (y < 0.75 || !isQuarter(y)) continue;
+      if (x < 6 && y > 6) continue;           // 왼쪽 위 정보창 영역 피하기
+      list.push({ a, b, tx: x, ty: y, ground: false });
     }
+  }
+  return list;
+})();
+const GROUND_CANDS = CANDIDATES.filter((c) => c.ground);
+const AIR_CANDS = CANDIDATES.filter((c) => !c.ground);
 
-    // 좌표 변환 함수 (수학 좌표 → 화면 좌표)
-    function toScreenX(x) { return ORIGIN_X + x; }
-    function toScreenY(y) { return GROUND_Y - y; }
+function makeProblem(force) {
+  for (let tries = 0; tries < 500; tries++) {
+    const c = random(random() < 0.2 ? GROUND_CANDS : AIR_CANDS);
+    const f = (x) => yAt(c.a, c.b, x);
+    const want = force || { wall: random() < 0.75, ceiling: random() < 0.4, hoop: random() < 0.45 };
+    if (!want.wall && !want.ceiling && !want.hoop) want.wall = true;
 
-    function draw() {
-      background(245, 247, 250);
+    const p = {
+      sol: { a: c.a, b: c.b },
+      target: { x: c.tx, y: c.ty, r: 0.4, ground: c.ground },
+      walls: [], ceilings: [], hoops: [],
+    };
 
-      const a = sliderA.value();
-      const b = sliderB.value();
-      labelA.html(a.toFixed(4));
-      labelB.html(b.toFixed(2));
-
-      drawEnvironment();
-      drawTrajectoryPreview(a, b);
-      drawVertex(a, b);
-      drawTarget();
-      drawObstacle();
-      drawCannon();
-
-      if (projectile.active) {
-        updateProjectile(a, b);
+    if (want.hoop) {
+      const opts = [];
+      for (let hx = 2; hx <= c.tx - 2; hx++) {
+        const hy = clean(f(hx));
+        if (hy >= 1.5 && isQuarter(hy) && !(hx < 5 && hy > 6)) opts.push({ x: hx, y: hy, r: 0.45 });
       }
-
-      // UI 정보 텍스트
-      // y = -ax² + bx 의 꼭짓점: x = b/(2a), y = b²/(4a)
-      // y = 0 인 두 근: x = 0, x = b/a  → 포탄이 떨어지는 지점
-      const vx = b / (2 * a);
-      const vy = (b * b) / (4 * a);
-      const landX = b / a;
-
-      fill(50);
-      noStroke();
-      textSize(15);
-      textAlign(LEFT, BASELINE);
-      text(`현재 함수: y = -${a.toFixed(4)}x² + ${b.toFixed(2)}x`, 20, 30);
-      text(`상태: ${statusMessage}`, 20, 55);
-
-      fill(100);
-      textSize(13);
-      text(`꼭짓점 (b/2a, b²/4a) = (${vx.toFixed(0)}, ${vy.toFixed(0)})   ·   착지점 x = b/a = ${landX.toFixed(0)}`, 20, 78);
-
-      textAlign(RIGHT, BASELINE);
-      fill(50);
-      textSize(14);
-      text(`적중 ${hits} / 발사 ${shots}`, width - 20, 30);
-      textAlign(LEFT, BASELINE);
+      if (!opts.length) continue;
+      p.hoops.push(random(opts));
     }
 
-    function drawEnvironment() {
-      // 지면
-      stroke(180);
-      strokeWeight(2);
-      line(0, GROUND_Y, width, GROUND_Y);
-      fill(230);
-      noStroke();
-      rect(0, GROUND_Y, width, height - GROUND_Y);
-    }
-
-    function drawTrajectoryPreview(a, b) {
-      noFill();
-      stroke(160, 190, 230);
-      strokeWeight(2);
-      drawingContext.setLineDash([5, 5]);
-      beginShape();
-      for (let x = 0; x <= CANVAS_W - ORIGIN_X; x += 5) {
-        let y = -a * x * x + b * x;
-        if (y < 0) break; // 지면 아래는 생략
-        vertex(toScreenX(x), toScreenY(y));
+    if (want.wall) {
+      const opts = [];
+      for (let wx = 2.5; wx <= c.tx - 1.5; wx += 0.5) {
+        if (p.hoops.some((h) => Math.abs(h.x - (wx + 0.2)) < 1.2)) continue;
+        const minH = Math.min(f(wx), f(wx + 0.4));
+        const h = Math.floor((minH - random(0.4, 0.9)) * 2) / 2;
+        if (h >= 1.5) opts.push({ x: wx, w: 0.4, h });
       }
-      endShape();
-      drawingContext.setLineDash([]);
+      if (!opts.length) continue;
+      p.walls.push(random(opts));
     }
 
-    // 꼭짓점(최고점) 표시
-    function drawVertex(a, b) {
+    if (want.ceiling) {
+      const vx = c.b / (2 * c.a);
+      const x1 = Math.max(1.5, Math.round((vx - random(2, 3.5)) * 2) / 2);
+      const x2 = Math.min(c.tx - 1, Math.round((vx + random(2, 3.5)) * 2) / 2);
+      if (x2 - x1 < 3) continue;
+      const ymax = vx >= x1 && vx <= x2 ? f(vx) : Math.max(f(x1), f(x2));
+      const cy = Math.ceil((ymax + random(0.5, 0.9)) * 2) / 2;
+      if (cy > 7.6) continue;
+      if (p.walls.some((w) => w.x + w.w >= x1 && w.x <= x2 && cy - w.h < 1.2)) continue;
+      p.ceilings.push({ x1, x2, y: cy });
+    }
+    return p;
+  }
+  return {
+    sol: { a: 0.125, b: 1.5 },
+    target: { x: 10, y: 2.5, r: 0.4, ground: false },
+    walls: [{ x: 4, w: 0.4, h: 3 }], ceilings: [], hoops: [],
+  };
+}
+
+/* =====================================================================
+   상태
+   ===================================================================== */
+let mode = "slider";            // "slider" | "aOnly" | "ab"
+let stage = null;               // 현재 문제
+const coef = { a: NaN, b: NaN };
+let shots = 0;                  // 현재 문제 발사 수
+let totalShots = 0, totalHits = 0;
+let proj = null, ghost = null, lastShot = null;
+let particles = [];
+let shake = 0, pulse = 0;
+let cleared = false;
+
+const $ = (id) => document.getElementById(id);
+const ui = {
+  sliderA: $("sliderA"), sliderB: $("sliderB"),
+  inputA: $("inputA"), inputB: $("inputB"),
+  fullPreview: $("fullPreview"),
+};
+
+/* =====================================================================
+   p5
+   ===================================================================== */
+function setup() {
+  const c = createCanvas(W, H);
+  c.parent("game-container");
+  bindControls();
+  stage = makeProblem({ wall: true, ceiling: false, hoop: false });
+  setCoef("a", 0.3);
+  setCoef("b", 1.2);
+  setMode("slider");
+}
+
+function draw() {
+  push();
+  if (shake > 0.5) {
+    translate(random(-shake, shake), random(-shake, shake));
+    shake *= 0.85;
+  } else shake = 0;
+
+  drawSky();
+  drawGrid();
+  drawGround();
+  drawCeilings();
+  drawWalls();
+  drawHoops();
+  drawTarget();
+  drawGhost();
+  drawPreview();
+  drawCannon();
+  if (proj) stepProjectile();
+  drawProjectile();
+  drawParticles();
+  pop();
+
+  drawHUD();
+}
+
+/* =====================================================================
+   모드 / 문제 / 조작부
+   ===================================================================== */
+function setMode(m) {
+  mode = m;
+  resetAttempt();
+  document.querySelectorAll("#modeSeg button").forEach((b) => b.classList.toggle("active", b.dataset.mode === m));
+
+  if (m === "slider") {
+    if (!(coef.a > 0)) setCoef("a", 0.3);
+    if (!(coef.b > 0)) setCoef("b", 1.2);
+  } else if (m === "aOnly") {
+    setCoef("a", NaN);
+    setCoef("b", stage.sol.b);
+  } else {
+    setCoef("a", NaN);
+    setCoef("b", NaN);
+  }
+  applyControlState();
+  renderProblem();
+  setStatus(defaultStatus(), "");
+  if (m !== "slider") setTimeout(() => ui.inputA.focus(), 0);
+}
+
+function newTarget() {
+  stage = makeProblem();
+  resetAttempt();
+  if (mode === "aOnly") { setCoef("a", NaN); setCoef("b", stage.sol.b); }
+  if (mode === "ab") { setCoef("a", NaN); setCoef("b", NaN); }
+  renderProblem();
+  setStatus(defaultStatus(), "");
+  if (mode !== "slider") setTimeout(() => ui.inputA.focus(), 0);
+}
+
+function applyControlState() {
+  const slider = mode === "slider";
+  ui.sliderA.style.display = slider ? "" : "none";
+  ui.sliderB.style.display = slider ? "" : "none";
+  ui.inputB.disabled = mode === "aOnly";
+  $("previewToggle").style.display = slider ? "" : "none";
+}
+
+function defaultStatus() {
+  if (mode === "slider") return "🎚 슬라이더로 궤적을 맞췄으면 발사! (Space)";
+  if (mode === "aOnly") return `✏️ b = ${fmt(stage.sol.b)}로 고정됐어요. a를 계산해서 입력하고 발사!`;
+  return "🧮 a, b를 계산해서 입력하고 발사!";
+}
+
+function renderProblem() {
+  const t = stage.target;
+  $("missionText").innerHTML = t.ground
+    ? `🚩 포탄을 정확히 <b>x = ${t.x}</b> 지점에 떨어뜨리세요.`
+    : `🎯 과녁 <b>(${t.x}, ${t.y})</b>를 맞히세요.`;
+
+  const chips = [];
+  if (mode === "aOnly") chips.push(`<span class="chip lock">🔒 b = ${fmt(stage.sol.b)} 고정</span>`);
+  stage.hoops.forEach((h) => chips.push(`<span class="chip hoop">⭕ 링 (${h.x}, ${h.y}) 통과</span>`));
+  stage.walls.forEach((w) => chips.push(`<span class="chip wall">🧱 벽 x = ${w.x}, 높이 ${w.h}</span>`));
+  stage.ceilings.forEach((c) => chips.push(`<span class="chip ceiling">⛰ 천장 y = ${c.y}</span>`));
+  $("chips").innerHTML = chips.join("");
+
+  $("hintText").innerHTML = hintHTML();
+  $("hintText").style.display = "none";
+  $("hintBtn").textContent = "💡 힌트";
+  renderScore();
+}
+
+function hintHTML() {
+  const t = stage.target, B = stage.sol.b;
+  const h = stage.hoops[0], w = stage.walls[0], c = stage.ceilings[0];
+  const pt = t.ground ? "착지점" : "과녁";
+  let s;
+  if (mode === "slider") {
+    s = "점선 궤적이 과녁 중심을 지나게 맞춰보세요. a를 키우면 포물선이 좁아지고, b를 키우면 발사각이 커져요 (b = tan θ).";
+  } else if (mode === "aOnly") {
+    s = t.ground
+      ? `착지점(근)은 x = b/a 예요. b = ${fmt(B)}이니까 ${t.x} = ${fmt(B)} / a 를 풀어보세요.`
+      : `y = −ax² + ${fmt(B)}x 에 x = ${t.x}, y = ${t.y} 를 대입하면 a에 대한 일차방정식이 나와요.`;
+  } else if (h) {
+    s = `링 (${h.x}, ${h.y})과 ${pt} (${t.x}, ${t.y}), 두 점을 대입하면 a, b에 대한 연립방정식이 나와요.`;
+  } else {
+    s = (t.ground ? `근이 0과 ${t.x} → b = ${t.x}a.` : `과녁 대입: ${t.x}b − ${t.x * t.x}a = ${t.y}.`)
+      + " 식이 하나뿐이라 답이 여러 개예요! 꼭짓점의 x좌표 b/2a 를 직접 정해서 풀어보세요.";
+  }
+  if (mode !== "slider") {
+    if (w) s += ` 벽은 x = ${w.x}에서 높이가 ${w.h}보다 커야 넘어요.`;
+    if (c) s += ` 천장에 안 닿으려면 최고 높이 b²/4a 가 ${c.y}보다 작아야 해요.`;
+  }
+  return "💡 " + s;
+}
+
+function solutionHTML() {
+  const t = stage.target, A = stage.sol.a, B = stage.sol.b;
+  const h = stage.hoops[0];
+  if (mode === "aOnly") {
+    if (t.ground) return `착지점(근) x = b/a 이므로 ${t.x} = ${fmt(B)} / a<br>→ <b>a = ${frac(A)}</b>`;
+    return `y = −ax² + ${fmt(B)}x 에 (${t.x}, ${t.y}) 대입<br>`
+      + `${t.y} = −${t.x * t.x}a + ${fmt(B * t.x)} → ${t.x * t.x}a = ${fmt(B * t.x - t.y)}<br>→ <b>a = ${frac(A)}</b>`;
+  }
+  if (mode === "ab" && h) {
+    return `두 점을 대입하면 연립방정식<br>`
+      + `<b>−${h.x * h.x}a + ${h.x}b = ${h.y}</b> &nbsp;(링)<br>`
+      + `<b>−${t.x * t.x}a + ${t.x}b = ${t.y}</b> &nbsp;(${t.ground ? "착지점" : "과녁"})<br>`
+      + `풀면 <b>a = ${frac(A)}, b = ${frac(B)}</b>`;
+  }
+  let s = t.ground
+    ? `근이 0과 ${t.x} → y = −a·x(x − ${t.x}) 꼴 → <b>b = ${t.x}a</b>`
+    : `과녁 대입: <b>${t.x}b − ${t.x * t.x}a = ${t.y}</b>`;
+  s += `<br>이 조건을 만족하는 (a, b)는 여러 개예요. 출제 예시 해: <b>a = ${frac(A)}, b = ${frac(B)}</b>`;
+  if (stage.walls.length || stage.ceilings.length) s += `<br>(벽·천장 조건까지 만족하는 것만 정답!)`;
+  return s;
+}
+
+function resetAttempt() {
+  shots = 0;
+  proj = null;
+  ghost = null;
+  particles = [];
+  cleared = false;
+  if (stage) stage.hoops.forEach((h) => (h.passed = false));
+  $("overlay").classList.remove("show");
+}
+
+function setCoef(k, v, source) {
+  coef[k] = v;
+  const slider = k === "a" ? ui.sliderA : ui.sliderB;
+  const input = k === "a" ? ui.inputA : ui.inputB;
+  if (source !== "slider" && isFinite(v)) slider.value = v;
+  if (source !== "input") input.value = isFinite(v) ? fmt(v) : "";
+  input.classList.remove("err");
+}
+
+// "0.25", ".25", "1/4", "7/4", "0,25" 허용
+function parseNum(str) {
+  const s = str.trim().replace(/\s+/g, "").replace(",", ".");
+  if (!s) return NaN;
+  const m = s.match(/^(\d*\.?\d+)\/(\d*\.?\d+)$/);
+  if (m) {
+    const d = parseFloat(m[2]);
+    return d === 0 ? NaN : parseFloat(m[1]) / d;
+  }
+  return /^\d*\.?\d+$/.test(s) ? parseFloat(s) : NaN;
+}
+
+function bindControls() {
+  ui.sliderA.addEventListener("input", () => setCoef("a", parseFloat(ui.sliderA.value), "slider"));
+  ui.sliderB.addEventListener("input", () => setCoef("b", parseFloat(ui.sliderB.value), "slider"));
+  ui.inputA.addEventListener("input", () => {
+    const v = parseNum(ui.inputA.value);
+    setCoef("a", v > 0 ? v : NaN, "input");
+  });
+  ui.inputB.addEventListener("input", () => {
+    const v = parseNum(ui.inputB.value);
+    setCoef("b", v > 0 ? v : NaN, "input");
+  });
+
+  document.querySelectorAll("#modeSeg button").forEach((b) =>
+    b.addEventListener("click", () => setMode(b.dataset.mode))
+  );
+  $("fireBtn").addEventListener("click", fire);
+  $("newBtn").addEventListener("click", newTarget);
+  $("nextBtn").addEventListener("click", newTarget);
+  $("retryBtn").addEventListener("click", () => {
+    resetAttempt();
+    setStatus("같은 문제 다시! 더 적은 발사로 맞혀보세요.", "");
+  });
+  $("hintBtn").addEventListener("click", () => {
+    const box = $("hintText");
+    const open = box.style.display !== "block";
+    box.style.display = open ? "block" : "none";
+    $("hintBtn").textContent = open ? "💡 힌트 닫기" : "💡 힌트";
+  });
+
+  // 버튼 클릭 후 포커스 해제 (Space가 버튼을 다시 누르지 않도록)
+  document.addEventListener("click", (e) => {
+    const btn = e.target.closest("button");
+    if (btn) btn.blur();
+  });
+
+  document.addEventListener("keydown", (e) => {
+    const typing = e.target.tagName === "INPUT" && e.target.type === "text";
+    if ($("overlay").classList.contains("show")) {
+      if (e.key === "Enter") { e.preventDefault(); newTarget(); }
+      return;
+    }
+    if (e.key === "Enter" || (e.code === "Space" && !typing)) {
+      e.preventDefault();
+      fire();
+    } else if (!typing && (e.key === "n" || e.key === "N" || e.key === "ㅜ")) {
+      newTarget();
+    }
+  });
+}
+
+function setStatus(msg, kind) {
+  const el = $("status");
+  el.textContent = msg;
+  el.className = "status " + (kind || "");
+}
+
+function renderScore() {
+  const rate = totalShots ? Math.round((totalHits / totalShots) * 100) : 0;
+  $("score").textContent = `🎯 적중 ${totalHits} / 발사 ${totalShots}` + (totalShots ? ` (${rate}%)` : "");
+}
+
+/* =====================================================================
+   발사 & 충돌 판정
+   ===================================================================== */
+function fire() {
+  if (proj || cleared) return;
+  let ok = true;
+  [["a", ui.inputA], ["b", ui.inputB]].forEach(([k, input]) => {
+    if (!(coef[k] > 0)) {
+      input.classList.remove("err");
+      void input.offsetWidth;
+      input.classList.add("err");
+      ok = false;
+    }
+  });
+  if (!ok) {
+    setStatus("a, b에는 0보다 큰 수를 입력하세요. (예: 0.25 또는 1/4)", "bad");
+    return;
+  }
+  shots++;
+  totalShots++;
+  renderScore();
+  stage.hoops.forEach((h) => (h.passed = false));
+  proj = { a: coef.a, b: coef.b, x: 0, y: 0, trail: [[0, 0]] };
+  setStatus("포탄 비행 중...", "");
+}
+
+function segDist(px, py, x1, y1, x2, y2) {
+  const dx = x2 - x1, dy = y2 - y1;
+  const l2 = dx * dx + dy * dy;
+  let t = l2 ? ((px - x1) * dx + (py - y1) * dy) / l2 : 0;
+  t = Math.max(0, Math.min(1, t));
+  return Math.hypot(px - (x1 + t * dx), py - (y1 + t * dy));
+}
+
+function stepProjectile() {
+  const { a, b } = proj;
+  const px = proj.x, py = proj.y;
+  const nx = px + STEP;
+  const ny = yAt(a, b, nx);
+
+  // 링
+  for (const h of stage.hoops) {
+    if (!h.passed && px < h.x && nx >= h.x) {
+      const yh = yAt(a, b, h.x);
+      if (yh <= 0) return endShot("ground", {}, b / a, 0);   // 링에 닿기 전에 착지
+      if (Math.abs(yh - h.y) <= h.r) {
+        h.passed = true;
+        burst(h.x, yh, 14, ["#a855f7", "#c084fc", "#facc15"]);
+      } else {
+        return endShot("hoop", { h, yh }, h.x, yh);
+      }
+    }
+  }
+
+  // 벽 (위로 볼록 → 구간 양 끝이 최솟값)
+  for (const w of stage.walls) {
+    const lo = Math.max(px, w.x), hi = Math.min(nx, w.x + w.w);
+    if (lo <= hi) {
+      const yl = yAt(a, b, lo), yr = yAt(a, b, hi);
+      if (Math.min(yl, yr) <= w.h) {
+        const xc = yl <= w.h ? lo : hi;
+        return endShot("wall", { w, x: xc, y: yAt(a, b, xc) }, xc, Math.max(0, yAt(a, b, xc)));
+      }
+    }
+  }
+
+  // 천장 (구간 안에 꼭짓점이 있으면 꼭짓점이 최댓값)
+  for (const c of stage.ceilings) {
+    const lo = Math.max(px, c.x1), hi = Math.min(nx, c.x2);
+    if (lo <= hi) {
       const vx = b / (2 * a);
-      const vy = (b * b) / (4 * a);
-      const sx = toScreenX(vx);
-      const sy = toScreenY(vy);
-      if (sx > width || sy < 0) return; // 화면 밖이면 생략
+      const ym = vx >= lo && vx <= hi ? yAt(a, b, vx) : Math.max(yAt(a, b, lo), yAt(a, b, hi));
+      if (ym >= c.y) return endShot("ceiling", { c }, nx, Math.min(ny, c.y));
+    }
+  }
 
-      stroke(160, 190, 230);
-      strokeWeight(1);
-      drawingContext.setLineDash([2, 4]);
-      line(sx, sy, sx, GROUND_Y);
-      drawingContext.setLineDash([]);
+  // 과녁
+  const t = stage.target;
+  if (segDist(t.x, t.y, px, py, nx, ny) <= t.r && stage.hoops.every((h) => h.passed)) {
+    return endShot("hit", {}, t.x, t.y);
+  }
 
+  if (ny <= 0) return endShot("ground", {}, b / a, 0);
+  if (nx > X_MAX + 0.3) return endShot("out", {}, nx, ny);
+
+  proj.x = nx;
+  proj.y = ny;
+  proj.trail.push([nx, ny]);
+}
+
+function endShot(kind, info, ex, ey) {
+  const { a, b } = proj;
+  proj.trail.push([ex, ey]);
+  ghost = proj.trail;
+  proj = null;
+  const t = stage.target;
+
+  if (kind === "hit") {
+    cleared = true;
+    totalHits++;
+    renderScore();
+    lastShot = { a, b };
+    burst(t.x, t.y, 46, ["#ef4444", "#f97316", "#facc15", "#ffffff"]);
+    shake = 7;
+    setStatus(`🎯 명중! (이 문제 발사 ${shots}회)`, "good");
+    setTimeout(showOverlay, 850);
+    return;
+  }
+
+  burst(ex, ey, 12, ["#94a3b8", "#64748b", "#fbbf24"]);
+  if (kind === "wall" || kind === "ceiling") shake = 4;
+
+  const L = b / a;
+  let msg;
+  if (kind === "wall") {
+    msg = `🧱 벽에 부딪혔어요: x = ${fmt(info.x)}에서 높이 ${fmt(info.y)} < 벽 높이 ${info.w.h}`;
+  } else if (kind === "ceiling") {
+    msg = `⛰ 천장(y = ${info.c.y})에 부딪혔어요. 이 포물선의 최고 높이 b²/4a = ${fmt((b * b) / (4 * a))}`;
+  } else if (kind === "hoop") {
+    msg = `⭕ 링을 빗나갔어요: x = ${info.h.x}에서 높이 ${fmt(info.yh)} (링 중심 높이 ${info.h.y})`;
+  } else if (t.ground) {
+    msg = `💨 착지점 x = b/a = ${fmt(L)} → 목표 x = ${t.x}보다 ${L < t.x ? "짧아요" : "멀어요"}.`;
+  } else if (L < t.x) {
+    msg = `💨 과녁에 닿기 전에 x = b/a = ${fmt(L)} 지점에 떨어졌어요.`;
+  } else {
+    const yt = yAt(a, b, t.x);
+    msg = `💨 x = ${t.x}에서 포탄 높이 ${fmt(yt)} → 과녁 높이 ${t.y}보다 ${yt > t.y ? "높아요" : "낮아요"}.`;
+  }
+  setStatus(msg, "bad");
+}
+
+function showOverlay() {
+  if (!cleared) return;
+  const s = shots <= 1 ? 3 : shots === 2 ? 2 : 1;
+  $("clearStars").innerHTML = "★".repeat(s) + `<span class="off">${"★".repeat(3 - s)}</span>`;
+  $("clearMeta").textContent = `발사 ${shots}회 · 사용한 식 y = −${fmt(lastShot.a)}x² + ${fmt(lastShot.b)}x`;
+  $("clearSolution").innerHTML = "<b>📐 풀이</b><br>" + solutionHTML();
+  $("overlay").classList.add("show");
+}
+
+/* =====================================================================
+   그리기
+   ===================================================================== */
+function drawSky() {
+  const g = drawingContext.createLinearGradient(0, 0, 0, GY);
+  g.addColorStop(0, "#dbeafe");
+  g.addColorStop(1, "#f8fafc");
+  drawingContext.fillStyle = g;
+  drawingContext.fillRect(0, 0, W, GY);
+}
+
+function drawGrid() {
+  stroke(100, 116, 139, 28);
+  strokeWeight(1);
+  for (let i = 1; i < X_MAX; i++) line(toSX(i), 0, toSX(i), GY);
+  for (let j = 1; j <= Y_MAX; j++) line(0, toSY(j), W, toSY(j));
+  stroke(100, 116, 139, 90);
+  line(OX, 0, OX, GY);
+  noStroke();
+  fill(100, 116, 139);
+  textSize(10);
+  textAlign(RIGHT, CENTER);
+  for (let j = 1; j <= Y_MAX; j++) text(j, OX - 6, toSY(j));
+}
+
+function drawGround() {
+  noStroke();
+  fill("#efe6d2");
+  rect(0, GY, W, H - GY);
+  stroke("#65a30d");
+  strokeWeight(3);
+  line(0, GY, W, GY);
+  textSize(10);
+  textAlign(CENTER, TOP);
+  for (let i = 0; i < X_MAX; i++) {
+    stroke("#a8987a");
+    strokeWeight(1);
+    line(toSX(i), GY + 1, toSX(i), GY + 5);
+    noStroke();
+    fill("#7c6f57");
+    text(i, toSX(i), GY + 8);
+  }
+  textAlign(RIGHT, TOP);
+  text("x", W - 8, GY + 8);
+}
+
+function drawWalls() {
+  for (const w of stage.walls) {
+    const x = toSX(w.x), y = toSY(w.h), ww = w.w * SCALE;
+    noStroke();
+    fill("#b45309");
+    rect(x, y, ww, GY - y, 3, 3, 0, 0);
+    stroke("#92400e");
+    strokeWeight(1);
+    for (let yy = y + 10, row = 0; yy < GY; yy += 10, row++) {
+      line(x, yy, x + ww, yy);
+      const off = row % 2 ? ww / 2 : ww / 4;
+      line(x + off, yy - 10, x + off, yy);
+    }
+    tag(`높이 ${w.h}`, x + ww / 2, y - 6, "#92400e");
+  }
+}
+
+function drawCeilings() {
+  for (const c of stage.ceilings) {
+    const x1 = toSX(c.x1), x2 = toSX(c.x2), yb = toSY(c.y);
+    noStroke();
+    fill("#64748b");
+    rect(x1, 0, x2 - x1, yb);
+    stroke("#334155");
+    strokeWeight(3);
+    line(x1, yb, x2, yb);
+    noStroke();
+    fill("#f8fafc");
+    textSize(11);
+    textStyle(BOLD);
+    textAlign(RIGHT, BOTTOM);
+    text(`천장 y = ${c.y}`, x2 - 8, yb - 6);
+    textStyle(NORMAL);
+  }
+}
+
+function drawHoops() {
+  for (const h of stage.hoops) {
+    const sx = toSX(h.x), sy = toSY(h.y), rh = h.r * SCALE;
+    noFill();
+    strokeWeight(5);
+    stroke(h.passed ? "#22c55e" : "#a855f7");
+    ellipse(sx, sy, 16, rh * 2);
+    tag(`링 (${h.x}, ${h.y})`, sx, sy - rh - 6, "#7e22ce");
+  }
+}
+
+function drawTarget() {
+  const t = stage.target, sx = toSX(t.x), sy = toSY(t.y), R = t.r * SCALE;
+  pulse += 0.06;
+  noStroke();
+  if (t.ground) {
+    stroke("#475569");
+    strokeWeight(2);
+    line(sx, GY, sx, GY - 48);
+    noStroke();
+    fill("#ef4444");
+    triangle(sx, GY - 48, sx + 24, GY - 41, sx, GY - 34);
+    fill("#ef4444"); arc(sx, GY, R * 2, R * 2, PI, TWO_PI);
+    fill("#ffffff"); arc(sx, GY, R * 1.3, R * 1.3, PI, TWO_PI);
+    fill("#ef4444"); arc(sx, GY, R * 0.6, R * 0.6, PI, TWO_PI);
+    tag(`(${t.x}, ${t.y})`, sx, GY - 54, "#b91c1c");
+  } else {
+    noFill();
+    stroke(239, 68, 68, 70 + 50 * sin(pulse));
+    strokeWeight(3);
+    circle(sx, sy, R * 2 + 10 + 4 * sin(pulse));
+    noStroke();
+    fill("#ef4444"); circle(sx, sy, R * 2);
+    fill("#ffffff"); circle(sx, sy, R * 1.3);
+    fill("#ef4444"); circle(sx, sy, R * 0.6);
+    tag(`(${t.x}, ${t.y})`, sx, sy - R - 9, "#b91c1c");
+  }
+}
+
+function drawGhost() {
+  if (!ghost || ghost.length < 2) return;
+  noFill();
+  stroke(100, 116, 139, 130);
+  strokeWeight(2);
+  drawingContext.setLineDash([2, 5]);
+  beginShape();
+  ghost.forEach(([x, y]) => vertex(toSX(x), toSY(y)));
+  endShape();
+  drawingContext.setLineDash([]);
+  if (!cleared && !proj) {
+    const [ex, ey] = ghost[ghost.length - 1];
+    const sx = toSX(ex), sy = toSY(ey);
+    stroke(220, 38, 38, 180);
+    strokeWeight(2.5);
+    line(sx - 5, sy - 5, sx + 5, sy + 5);
+    line(sx - 5, sy + 5, sx + 5, sy - 5);
+  }
+}
+
+function drawPreview() {
+  if (mode !== "slider") return;
+  const a = coef.a, b = coef.b;
+  if (!(a > 0 && b > 0)) return;
+
+  if (ui.fullPreview.checked) {
+    noFill();
+    stroke(37, 99, 235, 150);
+    strokeWeight(2);
+    drawingContext.setLineDash([6, 6]);
+    beginShape();
+    for (let x = 0; x <= X_MAX + 0.5; x += 0.05) {
+      const y = yAt(a, b, x);
+      if (y < 0) { vertex(toSX(b / a), toSY(0)); break; }
+      vertex(toSX(x), toSY(y));
+    }
+    endShape();
+    drawingContext.setLineDash([]);
+    const vx = b / (2 * a), vy = (b * b) / (4 * a);
+    if (vx < X_MAX && vy < Y_MAX) {
       noStroke();
-      fill(49, 130, 206);
-      circle(sx, sy, 8);
-      textSize(11);
+      fill(37, 99, 235);
+      circle(toSX(vx), toSY(vy), 7);
+      textSize(10);
       textAlign(CENTER, BOTTOM);
-      text("꼭짓점", sx, sy - 6);
-      textAlign(LEFT, BASELINE);
+      text("꼭짓점", toSX(vx), toSY(vy) - 6);
     }
-
-    function drawCannon() {
-      fill(70);
-      noStroke();
-      ellipse(toScreenX(0), toScreenY(0), 20, 20);
+  } else {
+    noStroke();
+    for (let x = 0.3; x <= PARTIAL_LEN; x += 0.2) {
+      const y = yAt(a, b, x);
+      if (y < 0) break;
+      fill(37, 99, 235, 230 * (1 - x / PARTIAL_LEN));
+      circle(toSX(x), toSY(y), 5);
     }
+  }
+}
 
-    function drawObstacle() {
-      fill(160, 80, 80);
-      noStroke();
-      rect(toScreenX(obstacle.x), toScreenY(obstacle.h), obstacle.w, obstacle.h);
-      fill(120);
-      textSize(12);
-      text("장애물", toScreenX(obstacle.x) - 5, toScreenY(obstacle.h) - 8);
-    }
+function drawCannon() {
+  const b = proj ? proj.b : coef.b > 0 ? coef.b : 1;
+  const ang = atan(b);
+  const cx = toSX(0), cy = toSY(0);
 
-    function drawTarget() {
-      fill(220, 60, 60);
-      noStroke();
-      ellipse(toScreenX(target.x), toScreenY(target.y), target.r * 2);
-      fill(255);
-      ellipse(toScreenX(target.x), toScreenY(target.y), target.r);
-    }
+  noFill();
+  stroke(37, 99, 235, 140);
+  strokeWeight(1.5);
+  arc(cx, cy, 76, 76, -ang, 0);
+  noStroke();
+  fill(37, 99, 235);
+  textSize(12);
+  textAlign(CENTER, CENTER);
+  text("θ", cx + 48 * cos(-ang / 2), cy + 48 * sin(-ang / 2));
 
-    function fireProjectile() {
-      if (projectile.active) return; // 비행 중 중복 발사 방지
-      projectile.x = 0;
-      projectile.y = 0;
-      projectile.active = true;
-      shots++;
-      statusMessage = "포탄 비행 중...";
-    }
+  push();
+  translate(cx, cy);
+  rotate(-ang);
+  noStroke();
+  fill("#334155");
+  rect(0, -7, 46, 14, 4);
+  fill("#1e293b");
+  rect(38, -8.5, 12, 17, 3);
+  pop();
 
-    function resetTarget() {
-      target.x = floor(random(420, 650));
-      target.y = floor(random(60, 200));
-      obstacle.h = floor(random(100, 180));
-      projectile.active = false;
-      statusMessage = "새로운 타깃 생성 완료.";
-    }
+  noStroke();
+  fill("#475569");
+  arc(cx, cy + 1, 42, 36, PI, TWO_PI, CHORD);
+  fill("#1e293b");
+  circle(cx, cy, 12);
+}
 
-    function updateProjectile(a, b) {
-      projectile.x += 4;
-      projectile.y = -a * projectile.x * projectile.x + b * projectile.x;
+function drawProjectile() {
+  if (!proj) return;
+  const n = proj.trail.length;
+  strokeWeight(3);
+  for (let i = 1; i < n; i++) {
+    const [x0, y0] = proj.trail[i - 1], [x1, y1] = proj.trail[i];
+    stroke(234, 88, 12, map(i, 0, n, 30, 210));
+    line(toSX(x0), toSY(y0), toSX(x1), toSY(y1));
+  }
+  // 현재 위치의 접선 (기울기 y' = -2ax + b)
+  const s = -2 * proj.a * proj.x + proj.b;
+  const L = 0.9 / Math.sqrt(1 + s * s);
+  stroke(249, 115, 22);
+  strokeWeight(2);
+  line(toSX(proj.x - L), toSY(proj.y - s * L), toSX(proj.x + L), toSY(proj.y + s * L));
+  noStroke();
+  fill("#1e293b");
+  circle(toSX(proj.x), toSY(proj.y), 12);
+  fill(255, 255, 255, 140);
+  circle(toSX(proj.x) - 2, toSY(proj.y) - 2, 4);
+}
 
-      // 포탄 렌더링
-      fill(40);
-      noStroke();
-      circle(toScreenX(projectile.x), toScreenY(projectile.y), 10);
+function burst(x, y, n, cols) {
+  const sx = toSX(x), sy = toSY(y);
+  for (let i = 0; i < n; i++) {
+    const ang = random(TWO_PI), sp = random(1.5, 5.5);
+    particles.push({ x: sx, y: sy, vx: cos(ang) * sp, vy: sin(ang) * sp - 1.5, life: 1, c: color(random(cols)), s: random(3, 7) });
+  }
+}
 
-      // 장애물 충돌 판정
-      if (projectile.x >= obstacle.x && projectile.x <= obstacle.x + obstacle.w) {
-        if (projectile.y <= obstacle.h) {
-          projectile.active = false;
-          statusMessage = "장애물에 충돌했습니다!";
-          return;
-        }
-      }
+function drawParticles() {
+  noStroke();
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.x += p.vx; p.y += p.vy; p.vy += 0.18; p.life -= 0.022;
+    if (p.life <= 0) { particles.splice(i, 1); continue; }
+    p.c.setAlpha(255 * p.life);
+    fill(p.c);
+    circle(p.x, p.y, p.s);
+  }
+}
 
-      // 목표물 적중 판정 (유클리드 거리)
-      let d = dist(projectile.x, projectile.y, target.x, target.y);
-      if (d < target.r) {
-        projectile.active = false;
-        hits++;
-        statusMessage = "적중 성공! '새 타깃'을 눌러 다음 단계로 넘어가세요.";
-        return;
-      }
+function tag(str, x, y, col) {
+  textSize(11);
+  textStyle(BOLD);
+  const tw = textWidth(str);
+  noStroke();
+  fill(255, 255, 255, 225);
+  rect(x - tw / 2 - 5, y - 15, tw + 10, 17, 5);
+  fill(col || "#0f172a");
+  textAlign(CENTER, BASELINE);
+  text(str, x, y - 2);
+  textStyle(NORMAL);
+}
 
-      // 지면 충돌 판정
-      if (projectile.x > 0 && projectile.y <= 0) {
-        projectile.active = false;
-        statusMessage = "빗나갔습니다. 다시 계산해보세요.";
-        return;
-      }
+function drawHUD() {
+  const a = proj ? proj.a : coef.a;
+  const b = proj ? proj.b : coef.b;
+  const lines = [];
+  lines.push({ t: `y = −${fmt(a)}x² + ${fmt(b)}x`, size: 15, bold: true, col: "#0f172a" });
+  if (proj) {
+    const s = -2 * a * proj.x + b;
+    lines.push({ t: `순간 기울기 y′ = −2ax + b = ${fmt(s)}`, size: 12, col: "#c2410c" });
+  } else if (b > 0) {
+    lines.push({ t: `발사각 θ ≈ ${Math.round(degrees(atan(b)) * 10) / 10}°  (tan θ = b)`, size: 12, col: "#2563eb" });
+  }
+  if (mode === "slider" && a > 0 && b > 0) {
+    lines.push({ t: `꼭짓점 (${fmt(b / (2 * a))}, ${fmt((b * b) / (4 * a))}) · 착지점 x = b/a = ${fmt(b / a)}`, size: 12, col: "#475569" });
+  }
 
-      // 화면 오른쪽 밖으로 나간 경우 (a가 작고 b가 크면 착지점 b/a가 화면보다 멀어짐)
-      if (toScreenX(projectile.x) > width) {
-        projectile.active = false;
-        statusMessage = "화면 밖으로 날아갔습니다. a를 키우거나 b를 줄여보세요.";
-      }
-    }
-  </script>
+  let wMax = 0;
+  lines.forEach((l) => {
+    textSize(l.size);
+    textStyle(l.bold ? BOLD : NORMAL);
+    wMax = Math.max(wMax, textWidth(l.t));
+  });
+  const hBox = lines.reduce((s, l) => s + l.size + 7, 10);
+  noStroke();
+  fill(255, 255, 255, 228);
+  rect(10, 10, wMax + 22, hBox, 8);
+  let y = 12;
+  lines.forEach((l) => {
+    y += l.size + 5;
+    textSize(l.size);
+    textStyle(l.bold ? BOLD : NORMAL);
+    fill(l.col);
+    textAlign(LEFT, BASELINE);
+    text(l.t, 21, y);
+    y += 2;
+  });
+  textStyle(NORMAL);
+
+  const label = `이 문제 발사 ${shots}회`;
+  textSize(13);
+  const tw = textWidth(label);
+  fill(255, 255, 255, 228);
+  rect(W - tw - 32, 10, tw + 22, 28, 8);
+  fill("#334155");
+  textAlign(LEFT, BASELINE);
+  text(label, W - tw - 21, 29);
+}
+</script>
 </body>
 </html>

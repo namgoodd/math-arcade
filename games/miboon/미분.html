@@ -276,6 +276,7 @@ canvas {
 </head>
 
 <body>
+<a href="../../index.html" target="_top" style="position:fixed;top:10px;left:10px;z-index:99999;padding:5px 10px;border-radius:8px;background:rgba(15,23,42,.78);color:#e2e8f0;border:1px solid rgba(148,163,184,.45);font:700 13px -apple-system,'Malgun Gothic',sans-serif;text-decoration:none">← 허브</a>
 <div class="app">
 
 <header>
@@ -387,9 +388,9 @@ const SCALE = 42;
 const PLAYER_SCREEN_X = 220;
 
 let player;
-let obstacles;
-let particles;
-let pickups;
+let obstacles = [];
+let particles = [];
+let pickups = [];
 
 let running = false;
 let paused = false;

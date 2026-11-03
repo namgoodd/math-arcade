@@ -157,6 +157,8 @@
     }
     .card-banner.theme-blue   { background: linear-gradient(135deg, #dbeafe 0%, #93c5fd 100%); }
     .card-banner.theme-dark   { background: linear-gradient(135deg, #1f2937 0%, #0d1117 100%); }
+    .card-banner.theme-purple { background: linear-gradient(135deg, #ede9fe 0%, #c4b5fd 100%); }
+    .card-banner.theme-red    { background: linear-gradient(135deg, #fee2e2 0%, #fca5a5 100%); }
     .card-banner.theme-green  { background: linear-gradient(135deg, #dcfce7 0%, #86efac 100%); }
     .card-banner.theme-space  { background: radial-gradient(circle at 70% 40%, #1e3a5f 0%, #050a12 70%); }
     .card-banner.theme-soon   { background: #f1f5f9; filter: grayscale(1); opacity: 0.6; }
@@ -360,8 +362,7 @@
       <button class="tab-btn active" data-category="all">전체보기</button>
       <button class="tab-btn" data-category="function">함수/해석</button>
       <button class="tab-btn" data-category="probability">확률/경우의 수</button>
-      <button class="tab-btn" data-category="physics">벡터/물리</button>
-      <button class="tab-btn" data-category="etc">기타</button>
+      <button class="tab-btn" data-category="circle">도형의 방정식</button>
     </div>
 
     <div class="search-box">
@@ -420,8 +421,8 @@
         status: "ready",
         icon: "🎲",
         theme: "theme-purple",
-        desc: "ㄹㅇㄴㅁ",
-        tags: ["#경우의수", "#확률", "#조합"],
+        desc: "1~6 숫자 카드를 번갈아 내서 합을 31에 맞추는 전략 카드 배틀입니다. 31을 넘기면 패배! AI는 31에서 7씩 거꾸로 센 3, 10, 17, 24를 먼저 차지하는 필승 전략으로 움직입니다.",
+        tags: ["#경우의수", "#나머지", "#필승전략"],
         path: "./games/gyungwuesiuuu/경우의수.html"
       },
       {
@@ -432,8 +433,8 @@
         status: "ready",
         icon: "📊",
         theme: "theme-dark",
-        desc: "ㄻㄷㄴㅇㄴㄹ",
-        tags: ["#미분", "#도함수"],
+        desc: "f(x) = 0.02x² − 0.4x + 3 그래프 위를 달리며, 도함수 f′(x)로 기울기를 읽고 |f′(x)|를 정적분해 모은 에너지로 장애물을 돌파하는 러닝 게임입니다.",
+        tags: ["#미분", "#도함수", "#정적분"],
         path: "./games/miboon/미분.html"
       },
       {
@@ -444,8 +445,8 @@
         status: "ready",
         icon: "⭕",
         theme: "theme-red",
-        desc: "ㄹㄷㅁㅇㄴㅁ",
-        tags: ["#원의방정식", "#좌표평면"],
+        desc: "(x − a)² + (y − b)² = r² 원의 중심을 평행이동하며 어둠 속 구역을 탐사하는 게임입니다. 점과 직선 사이의 거리 공식으로 벽 충돌과 음파 반사를 계산합니다.",
+        tags: ["#원의방정식", "#평행이동", "#점과직선거리"],
         path: "./games/wonbang/원의방정식.html"
       },
       {
@@ -456,8 +457,8 @@
         status: "ready",
         icon: "📐",
         theme: "theme-green",
-        desc: "몰라",
-        tags: ["#삼각함수", "#사인", "#코사인", "#탄젠트"],
+        desc: "y = A sin(ωt + φ) + b 로 움직이는 발판을 타고 장애물을 피해 결승점까지 가는 플랫폼 게임입니다. 진폭 A와 주기 T = 2π/ω가 발판의 움직임을 결정합니다.",
+        tags: ["#삼각함수", "#사인", "#코사인", "#주기"],
         path: "./games/samgakhamsiuuu/삼각함수.html"
       }
     ];

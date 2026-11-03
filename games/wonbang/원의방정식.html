@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Echo Drift: Coordinate Shift</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- KaTeX for crisp mathematical formulas -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;800&family=Pretendard:wght@400;600;700&display=swap" rel="stylesheet">
+
+
+  <style>
+    body {
+      font-family: 'Pretendard', sans-serif;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    .font-mono-code {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    /* Neon Glow Effects */
+    .glow-cyan {
+      box-shadow: 0 0 20px rgba(6, 182, 212, 0.35);
+    }
+    .text-glow {
+      text-shadow: 0 0 10px rgba(34, 211, 238, 0.7);
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col items-center justify-center p-2 sm:p-4 overflow-x-hidden">
+
+
+  <!-- Main Container -->
+  <div class="w-full max-w-5xl flex flex-col gap-3">
+   
+    <!-- Header & Status Bar -->
+    <header class="bg-slate-900/90 border border-cyan-500/30 rounded-2xl p-4 backdrop-blur-md flex flex-wrap items-center justify-between gap-4 shadow-xl">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-cyan-950 border border-cyan-400 flex items-center justify-center text-cyan-300 font-extrabold text-xl shadow-[0_0_15px_rgba(6,182,212,0.4)]">
+          ◎
+        </div>
+        <div>
+          <h1 class="text-lg sm:text-xl font-bold tracking-tight text-white flex items-center gap-2">
+            Echo Drift <span class="text-xs px-2 py-0.5 rounded bg-cyan-900/80 text-cyan-300 border border-cyan-500/40">원의 평행이동</span>
+          </h1>
+          <p class="text-xs text-slate-400">공통수학 2: (x-a)2+(y-b)2=r2 좌표계 탐사선</p>
+        </div>
+      </div>
+
+
+      <!-- Real-time dynamic formula badge -->
+      <div class="flex items-center gap-2 bg-slate-950/80 border border-cyan-500/40 px-4 py-2 rounded-xl text-cyan-300 text-sm font-mono-code shadow-inner">
+        <span class="text-slate-400 text-xs uppercase font-sans">실시간 궤적식:</span>
+        <span id="circleFormulaKatex" class="font-semibold text-white"></span>
+      </div>
+
+
+      <!-- Stage & Reset control -->
+      <div class="flex items-center gap-2">
+        <div class="text-right mr-1">
+          <div class="text-[10px] text-slate-400 tracking-wider">LEVEL</div>
+          <div id="levelBadge" class="text-sm font-bold text-cyan-400">01 / 03</div>
+        </div>
+        <button id="resetBtn" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 active:scale-95 border border-slate-700 text-xs font-semibold text-slate-200 transition">
+          다시 시작
+        </button>
+      </div>
+    </header>
+
+
+    <!-- Canvas Play Area & Side HUD -->
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-3">
+     
+      <!-- Left/Main Canvas Box -->
+      <div class="lg:col-span-3 relative bg-slate-950 rounded-2xl border border-slate-800 overflow-hidden shadow-2xl glow-cyan flex items-center justify-center min-h-[460px]">
+        <canvas id="gameCanvas" width="760" height="480" class="w-full h-auto block cursor-crosshair"></canvas>
+       
+        <!-- On-Screen Flash Alert Notice -->
+        <div id="gameNotification" class="absolute top-4 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full text-xs font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-400/40 opacity-0 pointer-events-none transition-opacity duration-300 backdrop-blur-md">
+          시스템 메시지
+        </div>
+
+
+        <!-- Touch / Mobile Directional Overlay -->
+        <div class="absolute bottom-4 right-4 sm:hidden flex flex-col items-center gap-1 bg-slate-900/80 p-2 rounded-2xl border border-slate-700/50 backdrop-blur">
+          <button id="btnUp" class="w-10 h-10 rounded-lg bg-slate-800 active:bg-cyan-600 text-white font-bold flex items-center justify-center">▲</button>
+          <div class="flex gap-1">
+            <button id="btnLeft" class="w-10 h-10 rounded-lg bg-slate-800 active:bg-cyan-600 text-white font-bold flex items-center justify-center">◀</button>
+            <button id="btnPulse" class="w-10 h-10 rounded-lg bg-cyan-700 active:bg-cyan-400 text-white font-bold flex items-center justify-center text-xs">PULSE</button>
+            <button id="btnRight" class="w-10 h-10 rounded-lg bg-slate-800 active:bg-cyan-600 text-white font-bold flex items-center justify-center">▶</button>
+          </div>
+          <button id="btnDown" class="w-10 h-10 rounded-lg bg-slate-800 active:bg-cyan-600 text-white font-bold flex items-center justify-center">▼</button>
+        </div>
+      </div>
+
+
+      <!-- Right HUD: Mathematical & Mission Telemetry -->
+      <div class="lg:col-span-1 flex flex-col gap-3">
+       
+        <!-- Coordinates & Translation Card -->
+        <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 flex flex-col gap-3">
+          <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
+            좌표계 변환 데이터
+          </h2>
+         
+          <div class="space-y-2 text-xs font-mono-code">
+            <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800 flex justify-between items-center">
+              <span class="text-slate-400">중심 원점 (a, b):</span>
+              <span id="centerCoord" class="text-cyan-300 font-bold text-sm">(0, 0)</span>
+            </div>
+
+
+            <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800 flex justify-between items-center">
+              <span class="text-slate-400">고정 반경 (r):</span>
+              <span id="fixedRadius" class="text-emerald-400 font-bold text-sm">r = 75 px</span>
+            </div>
+
+
+            <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800 flex justify-between items-center">
+              <span class="text-slate-400">누적 이동 벡터 (Δx, Δy):</span>
+              <span id="deltaVector" class="text-purple-300 font-bold text-xs">(+0, +0)</span>
+            </div>
+
+
+            <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800 flex justify-between items-center">
+              <span class="text-slate-400">코어 획득 현황:</span>
+              <span id="keyStatus" class="text-amber-400 font-bold text-xs">0 / 0</span>
+            </div>
+          </div>
+        </div>
+
+
+        <!-- Mission Guide & Operations -->
+        <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 flex flex-col gap-2.5 flex-1">
+          <h2 class="text-xs font-bold text-slate-300 uppercase tracking-wider">탐사 조작 & 가이드</h2>
+          <ul class="text-xs text-slate-400 space-y-2 leading-relaxed">
+            <li class="flex items-start gap-1.5">
+              <span class="text-cyan-400 font-bold">1.</span>
+              <span><b class="text-cyan-300 font-mono-code bg-slate-800 px-1.5 py-0.5 rounded border border-slate-700">W A S D</b>: 원의 중심 (a,b) 평행이동 (상·좌·하·우). 반경 r=75는 일정하게 보존됩니다.</span>
+            </li>
+            <li class="flex items-start gap-1.5">
+              <span class="text-cyan-400 font-bold">2.</span>
+              <span><b class="text-cyan-300 font-mono-code bg-slate-800 px-1.5 py-0.5 rounded border border-slate-700">[Spacebar]</b>: 소나 펄스를 전방위 방출하여 칠흑 속 벽체의 윤곽 레이더 신호를 탐지합니다.</span>
+            </li>
+            <li class="flex items-start gap-1.5">
+              <span class="text-cyan-400 font-bold">3.</span>
+              <span>암흑 속에 숨겨진 <span class="text-amber-400 font-bold">에너지 코어</span>를 모두 수집한 뒤 반짝이는 <span class="text-emerald-400 font-bold">탈출 게이트</span>로 진입하세요.</span>
+            </li>
+          </ul>
+
+
+          <div class="mt-auto pt-2 border-t border-slate-800 text-[11px] text-slate-500">
+            원과 직선 사이의 거리 공식 d=|ax0+by0+c|a2+b2을 활용해 벽 충돌 및 음파 반사를 실시간 계산합니다.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Stage Clear / Win Modal -->
+  <div id="clearModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-slate-900 border border-cyan-500/50 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl text-center flex flex-col items-center gap-4">
+      <div class="w-16 h-16 rounded-2xl bg-cyan-950 border border-cyan-400 flex items-center justify-center text-3xl shadow-[0_0_25px_rgba(6,182,212,0.6)]">
+        ✦
+      </div>
+      <div>
+        <h3 id="modalTitle" class="text-xl font-extrabold text-white">섹터 탐사 완료!</h3>
+        <p id="modalDesc" class="text-sm text-slate-300 mt-1">원의 중심 (a,b)의 평행이동을 통해 미지의 경로를 확보했습니다.</p>
+      </div>
+
+
+      <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 w-full text-xs font-mono-code text-cyan-300 space-y-1">
+        <div>최종 중심 좌표: <span id="modalFinalCenter" class="text-white font-bold"></span></div>
+        <div>총 이동 변위: <span id="modalDisplacement" class="text-white font-bold"></span></div>
+      </div>
+
+
+      <div class="flex gap-2 w-full pt-2">
+        <button id="modalNextBtn" class="flex-1 py-3 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold text-sm shadow-lg shadow-cyan-500/30 transition">
+          다음 구역 탐사
+        </button>
+      </div>
+    </div>
+  </div>
+
+
+  <script>
+    /* ==========================================================================
+       Game Engine: Echo Drift (원의 평행이동)
+       ========================================================================== */
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+
+    // UI Reference Elements
+    const formulaKatexEl = document.getElementById('circleFormulaKatex');
+    const centerCoordEl = document.getElementById('centerCoord');
+    const deltaVectorEl = document.getElementById('deltaVector');
+    const keyStatusEl = document.getElementById('keyStatus');
+    const levelBadgeEl = document.getElementById('levelBadge');
+    const notificationEl = document.getElementById('gameNotification');
+    const clearModal = document.getElementById('clearModal');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalDesc = document.getElementById('modalDesc');
+    const modalFinalCenter = document.getElementById('modalFinalCenter');
+    const modalDisplacement = document.getElementById('modalDisplacement');
+    const modalNextBtn = document.getElementById('modalNextBtn');
+    const resetBtn = document.getElementById('resetBtn');
+
+
+    // Mathematical Configuration
+    const FIXED_RADIUS = 75; // 반지름 r 고정 (px)
+    const DRONE_CORE_RADIUS = 7;
+    const SPEED = 2.4;
+
+
+    // Game State
+    let currentLevelIndex = 0;
+    let initialA = 0;
+    let initialB = 0;
+   
+    // Circle State: Center (a, b) and fixed radius r
+    let circle = {
+      a: 100, // x-coordinate of center
+      b: 100, // y-coordinate of center
+      r: FIXED_RADIUS,
+      pulseGlow: 0.0, // 0.0 ~ 1.0 (after pulse activation)
+      pulseRingRadius: 0
+    };
+
+
+    // Input tracker (Primary: WASD)
+    const keys = {
+      w: false,
+      s: false,
+      a: false,
+      d: false,
+      Space: false
+    };
+
+
+    // Stage Definitions: Maze walls (rectangles), Energy Cores, Goal Gate
+    const STAGES = [
+      {
+        name: "구역 01: 수평/수직 평행이동 기초",
+        start: { x: 90, y: 120 },
+        goal: { x: 670, y: 390, r: 24 },
+        keys: [
+          { x: 380, y: 120, r: 12, collected: false }
+        ],
+        walls: [
+          // Outer Borders
+          { x: 10, y: 10, w: 740, h: 20 },
+          { x: 10, y: 450, w: 740, h: 20 },
+          { x: 10, y: 10, w: 20, h: 460 },
+          { x: 730, y: 10, w: 20, h: 460 },
+          // Internal maze guides
+          { x: 180, y: 10, w: 20, h: 320 },
+          { x: 180, y: 330, w: 360, h: 20 },
+          { x: 540, y: 150, w: 20, h: 200 },
+          { x: 340, y: 180, w: 20, h: 160 }
+        ]
+      },
+      {
+        name: "구역 02: 지그재그 회랑과 코어 탐색",
+        start: { x: 80, y: 80 },
+        goal: { x: 670, y: 80, r: 24 },
+        keys: [
+          { x: 80, y: 390, r: 12, collected: false },
+          { x: 420, y: 240, r: 12, collected: false }
+        ],
+        walls: [
+          // Outer borders
+          { x: 10, y: 10, w: 740, h: 20 },
+          { x: 10, y: 450, w: 740, h: 20 },
+          { x: 10, y: 10, w: 20, h: 460 },
+          { x: 730, y: 10, w: 20, h: 460 },
+          // Labyrinth baffles
+          { x: 160, y: 30, w: 25, h: 340 },
+          { x: 260, y: 110, w: 25, h: 340 },
+          { x: 360, y: 30, w: 25, h: 260 },
+          { x: 480, y: 180, w: 25, h: 270 },
+          { x: 580, y: 30, w: 25, h: 330 }
+        ]
+      },
+      {
+        name: "구역 03: 정밀 벡터 미로 (Precision Labyrinth)",
+        start: { x: 80, y: 400 },
+        goal: { x: 660, y: 80, r: 24 },
+        keys: [
+          { x: 240, y: 80, r: 12, collected: false },
+          { x: 420, y: 400, r: 12, collected: false },
+          { x: 670, y: 400, r: 12, collected: false }
+        ],
+        walls: [
+          // Outer borders
+          { x: 10, y: 10, w: 740, h: 20 },
+          { x: 10, y: 450, w: 740, h: 20 },
+          { x: 10, y: 10, w: 20, h: 460 },
+          { x: 730, y: 10, w: 20, h: 460 },
+          // Complex obstacles
+          { x: 150, y: 150, w: 180, h: 25 },
+          { x: 150, y: 280, w: 180, h: 25 },
+          { x: 310, y: 175, w: 20, h: 115 },
+          { x: 330, y: 30, w: 25, h: 220 },
+          { x: 480, y: 120, w: 25, h: 330 },
+          { x: 480, y: 220, w: 160, h: 25 },
+          { x: 570, y: 340, w: 160, h: 25 }
+        ]
+      }
+    ];
+
+
+    let currentStage = null;
+
+
+    // Pulse wave rings history for reverberation visuals
+    let pulses = [];
+    // Detected wall segment traces (fade out over time)
+    let pingTraces = [];
+
+
+    // Offscreen canvas for precise clipping & masking
+    const worldCanvas = document.createElement('canvas');
+    worldCanvas.width = 760;
+    worldCanvas.height = 480;
+    const worldCtx = worldCanvas.getContext('2d');
+
+
+    // Initialize Level
+    function loadLevel(index) {
+      if (index >= STAGES.length) {
+        showVictoryScreen();
+        return;
+      }
+      currentLevelIndex = index;
+      currentStage = JSON.parse(JSON.stringify(STAGES[currentLevelIndex]));
+     
+      // Setup circle center (a, b)
+      circle.a = currentStage.start.x;
+      circle.b = currentStage.start.y;
+      initialA = circle.a;
+      initialB = circle.b;
+      circle.r = FIXED_RADIUS;
+      circle.pulseGlow = 0.8;
+      pulses = [];
+      pingTraces = [];
+
+
+      levelBadgeEl.innerText = `0${currentLevelIndex + 1} / 0${STAGES.length}`;
+      showNotification(`${currentStage.name} 진입`);
+      updateHudAndFormula();
+      clearModal.classList.add('hidden');
+    }
+
+
+    // Mathematical Circle Formula String Renderer with KaTeX
+    function updateHudAndFormula() {
+      const a = Math.round(circle.a);
+      const b = Math.round(circle.b);
+      const r = circle.r;
+      const dx = a - Math.round(initialA);
+      const dy = b - Math.round(initialB);
+
+
+      // LaTeX formatting for (x - a)^2 + (y - b)^2 = r^2
+      const signA = a >= 0 ? `- ${a}` : `+ ${Math.abs(a)}`;
+      const signB = b >= 0 ? `- ${b}` : `+ ${Math.abs(b)}`;
+      const katexStr = `(x ${signA})^2 + (y ${signB})^2 = ${r}^2`;
+     
+      katex.render(katexStr, formulaKatexEl, {
+        throwOnError: false,
+        displayMode: false
+      });
+
+
+      centerCoordEl.innerText = `(${a}, ${b})`;
+      deltaVectorEl.innerText = `(${dx >= 0 ? '+' + dx : dx}, ${dy >= 0 ? '+' + dy : dy})`;
+
+
+      // Energy core counts
+      const totalKeys = currentStage.keys.length;
+      const collectedKeys = currentStage.keys.filter(k => k.collected).length;
+      keyStatusEl.innerText = `${collectedKeys} / ${totalKeys}`;
+      if (collectedKeys === totalKeys) {
+        keyStatusEl.classList.remove('text-amber-400');
+        keyStatusEl.classList.add('text-emerald-400');
+      } else {
+        keyStatusEl.classList.add('text-amber-400');
+        keyStatusEl.classList.remove('text-emerald-400');
+      }
+    }
+
+
+    // Trigger Sonar Pulse Wave
+    function triggerPulse() {
+      circle.pulseGlow = 1.0;
+      pulses.push({
+        x: circle.a,
+        y: circle.b,
+        currentR: 10,
+        maxR: 320, // Expands much wider to scan surrounding maze
+        speed: 5.5,
+        alpha: 1.0
+      });
+      showNotification("◎ 소나 펄스 방출: 지형 레이더 스캔");
+    }
+
+
+    // Check collision between a point/circle of center (nx, ny) with radius cr and rectangle
+    function checkWallCollision(nx, ny, cr) {
+      for (const wall of currentStage.walls) {
+        // Nearest point on rect to drone core
+        const closestX = Math.max(wall.x, Math.min(nx, wall.x + wall.w));
+        const closestY = Math.max(wall.y, Math.min(ny, wall.y + wall.h));
+        const distX = nx - closestX;
+        const distY = ny - closestY;
+        const distSq = distX * distX + distY * distY;
+        if (distSq < cr * cr) {
+          return true; // Collision detected
+        }
+      }
+      return false;
+    }
+
+
+    // Update Player Movement & Interactions
+    function updatePhysics() {
+      let moveX = 0;
+      let moveY = 0;
+
+
+      // Primary WASD controls
+      if (keys.w) moveY -= 1;
+      if (keys.s) moveY += 1;
+      if (keys.a) moveX -= 1;
+      if (keys.d) moveX += 1;
+
+
+      // Normalize diagonal speed
+      if (moveX !== 0 && moveY !== 0) {
+        moveX *= 0.7071;
+        moveY *= 0.7071;
+      }
+
+
+      // Smooth translation along axes with collision prevention
+      const newX = circle.a + moveX * SPEED;
+      const newY = circle.b + moveY * SPEED;
+
+
+      // X translation check
+      if (!checkWallCollision(newX, circle.b, DRONE_CORE_RADIUS)) {
+        circle.a = newX;
+      }
+      // Y translation check
+      if (!checkWallCollision(circle.a, newY, DRONE_CORE_RADIUS)) {
+        circle.b = newY;
+      }
+
+
+      // Decay Pulse Glow slowly
+      if (circle.pulseGlow > 0.25) {
+        circle.pulseGlow -= 0.007;
+      }
+
+
+      // Update pulse waves and detect wall edges
+      for (let i = pulses.length - 1; i >= 0; i--) {
+        const p = pulses[i];
+        p.currentR += p.speed;
+        p.alpha -= 0.016;
+
+
+        // Wall edge detection: circle intersection with wall rectangles
+        if (currentStage) {
+          currentStage.walls.forEach(w => {
+            // Check 4 segments of rectangle
+            const segments = [
+              { x1: w.x, y1: w.y, x2: w.x + w.w, y2: w.y },
+              { x1: w.x + w.w, y1: w.y, x2: w.x + w.w, y2: w.y + w.h },
+              { x1: w.x, y1: w.y + w.h, x2: w.x + w.w, y2: w.y + w.h },
+              { x1: w.x, y1: w.y, x2: w.x, y2: w.y + w.h }
+            ];
+
+
+            segments.forEach(seg => {
+              // Sample points along segment to see if pulse ring passes them
+              const steps = Math.max(3, Math.floor(Math.hypot(seg.x2 - seg.x1, seg.y2 - seg.y1) / 16));
+              for (let s = 0; s <= steps; s++) {
+                const px = seg.x1 + (seg.x2 - seg.x1) * (s / steps);
+                const py = seg.y1 + (seg.y2 - seg.y1) * (s / steps);
+                const d = Math.hypot(px - p.x, py - p.y);
+                if (Math.abs(d - p.currentR) < p.speed * 1.2) {
+                  // Add neon trace blip
+                  pingTraces.push({
+                    x: px,
+                    y: py,
+                    life: 1.0,
+                    decay: 0.018 + Math.random() * 0.008
+                  });
+                }
+              }
+            });
+          });
+        }
+
+
+        if (p.alpha <= 0 || p.currentR >= p.maxR) {
+          pulses.splice(i, 1);
+        }
+      }
+
+
+      // Update ping traces (fading out over time)
+      for (let i = pingTraces.length - 1; i >= 0; i--) {
+        pingTraces[i].life -= pingTraces[i].decay;
+        if (pingTraces[i].life <= 0) {
+          pingTraces.splice(i, 1);
+        }
+      }
+
+
+      // Check Key Collection (Drone core touches key)
+      currentStage.keys.forEach(k => {
+        if (!k.collected) {
+          const dist = Math.hypot(circle.a - k.x, circle.b - k.y);
+          if (dist < DRONE_CORE_RADIUS + k.r + 4) {
+            k.collected = true;
+            triggerPulse();
+            showNotification("★ 에너지 코어 확보 완료!");
+          }
+        }
+      });
+
+
+      // Check Goal Reached (All keys collected and drone enters goal circle)
+      const allKeysCollected = currentStage.keys.every(k => k.collected);
+      const goal = currentStage.goal;
+      const distToGoal = Math.hypot(circle.a - goal.x, circle.b - goal.y);
+
+
+      if (distToGoal < DRONE_CORE_RADIUS + goal.r) {
+        if (allKeysCollected) {
+          openStageClearModal();
+        } else {
+          showNotification("⚠ 잠금됨: 모든 에너지 코어를 먼저 회수해야 합니다.");
+        }
+      }
+
+
+      updateHudAndFormula();
+    }
+
+
+    // Modal Display when Stage Cleared
+    function openStageClearModal() {
+      const a = Math.round(circle.a);
+      const b = Math.round(circle.b);
+      const dx = a - Math.round(initialA);
+      const dy = b - Math.round(initialB);
+      const distance = Math.round(Math.hypot(dx, dy));
+
+
+      modalTitle.innerText = `${currentStage.name} 돌파!`;
+      modalDesc.innerText = `원의 중심 (a, b)를 성공적으로 평행이동하여 탈출 게이트에 도달했습니다.`;
+      modalFinalCenter.innerText = `(${a}, ${b})`;
+      modalDisplacement.innerText = `Δx = ${dx}, Δy = ${dy} (유클리드 거리: 약 ${distance}px)`;
+      clearModal.classList.remove('hidden');
+    }
+
+
+    function showVictoryScreen() {
+      modalTitle.innerText = `★ 전 구역 탐사 대성공!`;
+      modalDesc.innerText = `원의 방정식과 평행이동 이론을 완벽히 마스터하셨습니다!`;
+      modalFinalCenter.innerText = `완료`;
+      modalDisplacement.innerText = `All Stages Cleared`;
+      modalNextBtn.innerText = `처음부터 다시 플레이`;
+      clearModal.classList.remove('hidden');
+      currentLevelIndex = -1; // Reset trigger on click
+    }
+
+
+    // Notification toast
+    let toastTimer = null;
+    function showNotification(msg) {
+      notificationEl.innerText = msg;
+      notificationEl.classList.remove('opacity-0');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        notificationEl.classList.add('opacity-0');
+      }, 1600);
+    }
+
+
+    /* ==========================================================================
+       Rendering: Canvas 2D Pure Pitch-Black Fog & Clipping Visibility
+       ========================================================================== */
+    function render() {
+      const w = canvas.width;
+      const h = canvas.height;
+
+
+      // 1. Fill base canvas with 100% Pure Pitch Black
+      ctx.fillStyle = "#020617";
+      ctx.fillRect(0, 0, w, h);
+
+
+      // 2. Render Full World Map onto hidden Offscreen Canvas
+      worldCtx.clearRect(0, 0, w, h);
+      worldCtx.fillStyle = "#030712";
+      worldCtx.fillRect(0, 0, w, h);
+      renderWorld(worldCtx);
+
+
+      // 3. Mask Offscreen Canvas: Keep ONLY the area inside (x-a)^2 + (y-b)^2 <= r^2
+      // Using 'destination-in' to preserve only the circle sight cone
+      worldCtx.save();
+      worldCtx.globalCompositeOperation = 'destination-in';
+      const sightGrad = worldCtx.createRadialGradient(
+        circle.a, circle.b, circle.r * 0.25,
+        circle.a, circle.b, circle.r
+      );
+      sightGrad.addColorStop(0, 'rgba(0, 0, 0, 1.0)');
+      sightGrad.addColorStop(0.85, 'rgba(0, 0, 0, 0.9)');
+      sightGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+
+
+      worldCtx.fillStyle = sightGrad;
+      worldCtx.beginPath();
+      worldCtx.arc(circle.a, circle.b, circle.r, 0, Math.PI * 2);
+      worldCtx.fill();
+      worldCtx.restore();
+
+
+      // 4. Draw Revealed Sight Cone onto main screen
+      ctx.drawImage(worldCanvas, 0, 0);
+
+
+      // 5. Draw Sonar Ping Radar Traces (Neon Afterglow of Wall Edges in Pitch Darkness)
+      if (pingTraces.length > 0) {
+        ctx.save();
+        pingTraces.forEach(pt => {
+          ctx.fillStyle = `rgba(34, 211, 238, ${pt.life * 0.9})`;
+          ctx.shadowColor = '#22d3ee';
+          ctx.shadowBlur = 8;
+          ctx.beginPath();
+          ctx.arc(pt.x, pt.y, 2.2, 0, Math.PI * 2);
+          ctx.fill();
+        });
+        ctx.restore();
+      }
+
+
+      // 6. Draw Expanding Pulse Waves (Wavefront Rings)
+      pulses.forEach(p => {
+        ctx.save();
+        ctx.strokeStyle = `rgba(56, 189, 248, ${p.alpha * 0.85})`;
+        ctx.lineWidth = 1.8;
+        ctx.shadowColor = '#38bdf8';
+        ctx.shadowBlur = 10;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.currentR, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+      });
+
+
+      // 7. Draw Drone & Coordinate Overlay on Top
+      renderCircleMathematicalOverlay(ctx);
+    }
+
+
+    // Render underlying terrain, walls, nodes (Rendered to Offscreen Canvas)
+    function renderWorld(targetCtx) {
+      // Coordinate subtle neon grid inside sight
+      targetCtx.strokeStyle = 'rgba(30, 58, 95, 0.45)';
+      targetCtx.lineWidth = 1;
+      const gridSize = 40;
+      for (let x = 0; x < canvas.width; x += gridSize) {
+        targetCtx.beginPath();
+        targetCtx.moveTo(x, 0);
+        targetCtx.lineTo(x, canvas.height);
+        targetCtx.stroke();
+      }
+      for (let y = 0; y < canvas.height; y += gridSize) {
+        targetCtx.beginPath();
+        targetCtx.moveTo(0, y);
+        targetCtx.lineTo(canvas.width, y);
+        targetCtx.stroke();
+      }
+
+
+      // Render Walls with Cyber Glow Border
+      currentStage.walls.forEach(w => {
+        targetCtx.fillStyle = '#0f172a';
+        targetCtx.fillRect(w.x, w.y, w.w, w.h);
+
+
+        targetCtx.strokeStyle = '#0284c7';
+        targetCtx.lineWidth = 2.0;
+        targetCtx.strokeRect(w.x, w.y, w.w, w.h);
+
+
+        targetCtx.fillStyle = 'rgba(56, 189, 248, 0.12)';
+        targetCtx.fillRect(w.x + 2, w.y + 2, Math.max(0, w.w - 4), Math.max(0, w.h - 4));
+      });
+
+
+      // Render Energy Cores
+      currentStage.keys.forEach((k) => {
+        if (!k.collected) {
+          targetCtx.save();
+          targetCtx.fillStyle = '#f59e0b';
+          targetCtx.shadowColor = '#fbbf24';
+          targetCtx.shadowBlur = 14;
+          targetCtx.beginPath();
+          targetCtx.arc(k.x, k.y, k.r, 0, Math.PI * 2);
+          targetCtx.fill();
+
+
+          targetCtx.fillStyle = '#ffffff';
+          targetCtx.beginPath();
+          targetCtx.arc(k.x, k.y, k.r * 0.45, 0, Math.PI * 2);
+          targetCtx.fill();
+          targetCtx.restore();
+        }
+      });
+
+
+      // Render Goal Gate
+      const goal = currentStage.goal;
+      const allKeysCollected = currentStage.keys.every(k => k.collected);
+      targetCtx.save();
+      targetCtx.lineWidth = 3;
+      targetCtx.strokeStyle = allKeysCollected ? '#10b981' : '#64748b';
+      targetCtx.fillStyle = allKeysCollected ? 'rgba(16, 185, 129, 0.25)' : 'rgba(100, 116, 139, 0.2)';
+      targetCtx.shadowColor = allKeysCollected ? '#34d399' : '#000000';
+      targetCtx.shadowBlur = allKeysCollected ? 20 : 0;
+      targetCtx.beginPath();
+      targetCtx.arc(goal.x, goal.y, goal.r, 0, Math.PI * 2);
+      targetCtx.stroke();
+      targetCtx.fill();
+
+
+      // Gate icon
+      targetCtx.fillStyle = allKeysCollected ? '#34d399' : '#94a3b8';
+      targetCtx.font = 'bold 12px JetBrains Mono';
+      targetCtx.textAlign = 'center';
+      targetCtx.textBaseline = 'middle';
+      targetCtx.fillText(allKeysCollected ? 'EXIT' : 'LOCK', goal.x, goal.y);
+      targetCtx.restore();
+    }
+
+
+    // Render the Drone itself and the visible Fixed Circle Perimeter
+    function renderCircleMathematicalOverlay(targetCtx) {
+      targetCtx.save();
+
+
+      // Fixed circle perimeter: (x - a)^2 + (y - b)^2 = r^2
+      targetCtx.strokeStyle = `rgba(34, 211, 238, ${0.4 + circle.pulseGlow * 0.6})`;
+      targetCtx.lineWidth = 1.5;
+      targetCtx.setLineDash([4, 4]); // Dashed circle outline
+      targetCtx.beginPath();
+      targetCtx.arc(circle.a, circle.b, circle.r, 0, Math.PI * 2);
+      targetCtx.stroke();
+      targetCtx.setLineDash([]); // Reset dash
+
+
+      // Pulse waves rendering
+      pulses.forEach(p => {
+        targetCtx.strokeStyle = `rgba(56, 189, 248, ${p.alpha * 0.9})`;
+        targetCtx.lineWidth = 2;
+        targetCtx.beginPath();
+        targetCtx.arc(p.x, p.y, p.currentR, 0, Math.PI * 2);
+        targetCtx.stroke();
+      });
+
+
+      // Center Coordinate Indicator: (a, b)
+      targetCtx.shadowColor = '#06b6d4';
+      targetCtx.shadowBlur = 10;
+      targetCtx.fillStyle = '#22d3ee';
+      targetCtx.beginPath();
+      targetCtx.arc(circle.a, circle.b, DRONE_CORE_RADIUS, 0, Math.PI * 2);
+      targetCtx.fill();
+
+
+      // Crosshair at center
+      targetCtx.strokeStyle = '#ffffff';
+      targetCtx.lineWidth = 1.2;
+      targetCtx.beginPath();
+      targetCtx.moveTo(circle.a - 5, circle.b);
+      targetCtx.lineTo(circle.a + 5, circle.b);
+      targetCtx.moveTo(circle.a, circle.b - 5);
+      targetCtx.lineTo(circle.a, circle.b + 5);
+      targetCtx.stroke();
+
+
+      // Radius line indicator (radius r vector)
+      targetCtx.strokeStyle = 'rgba(34, 211, 238, 0.4)';
+      targetCtx.lineWidth = 1;
+      targetCtx.beginPath();
+      targetCtx.moveTo(circle.a, circle.b);
+      targetCtx.lineTo(circle.a + circle.r, circle.b);
+      targetCtx.stroke();
+
+
+      // Radius label 'r=75'
+      targetCtx.fillStyle = '#a5f3fc';
+      targetCtx.font = '10px JetBrains Mono';
+      targetCtx.fillText(`r=${circle.r}`, circle.a + circle.r / 2 - 12, circle.b - 4);
+
+
+      targetCtx.restore();
+    }
+
+
+    // Main Game Loop
+    function gameLoop() {
+      updatePhysics();
+      render();
+      requestAnimationFrame(gameLoop);
+    }
+
+
+    /* ==========================================================================
+       Event Listeners & Key Handlers (WASD First)
+       ========================================================================== */
+    window.addEventListener('keydown', (e) => {
+      const key = e.key.toLowerCase();
+
+
+      // WASD key matching (case-insensitive)
+      if (key === 'w' || key === 'a' || key === 's' || key === 'd') {
+        e.preventDefault();
+        keys[key] = true;
+      } else if (e.code === 'Space') {
+        e.preventDefault();
+        if (!keys.Space) {
+          triggerPulse();
+        }
+        keys.Space = true;
+      }
+    });
+
+
+    window.addEventListener('keyup', (e) => {
+      const key = e.key.toLowerCase();
+
+
+      if (key === 'w' || key === 'a' || key === 's' || key === 'd') {
+        keys[key] = false;
+      } else if (e.code === 'Space') {
+        keys.Space = false;
+      }
+    });
+
+
+    // Touch controls for mobile / tablet
+    const bindTouch = (id, keyName) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.addEventListener('touchstart', (e) => { e.preventDefault(); keys[keyName] = true; });
+      el.addEventListener('touchend', (e) => { e.preventDefault(); keys[keyName] = false; });
+      el.addEventListener('mousedown', () => { keys[keyName] = true; });
+      el.addEventListener('mouseup', () => { keys[keyName] = false; });
+    };
+
+
+    bindTouch('btnUp', 'w');
+    bindTouch('btnDown', 's');
+    bindTouch('btnLeft', 'a');
+    bindTouch('btnRight', 'd');
+
+
+    const btnPulse = document.getElementById('btnPulse');
+    if (btnPulse) {
+      btnPulse.addEventListener('click', (e) => {
+        e.preventDefault();
+        triggerPulse();
+      });
+    }
+
+
+    resetBtn.addEventListener('click', () => {
+      loadLevel(currentLevelIndex);
+    });
+
+
+    modalNextBtn.addEventListener('click', () => {
+      if (currentLevelIndex === -1) {
+        loadLevel(0);
+      } else {
+        loadLevel(currentLevelIndex + 1);
+      }
+    });
+
+
+    // Start Game on window load
+    window.onload = function () {
+      loadLevel(0);
+      gameLoop();
+    };
+  </script>
+</body>
+</html>
+

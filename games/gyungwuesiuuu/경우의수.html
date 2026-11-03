@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>전략형 베스킨라빈스 31</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #17152d, #29204b);
+    color: white;
+    font-family: Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+.game {
+    width: 100%;
+    max-width: 850px;
+    background: #211d3b;
+    border: 1px solid #514576;
+    border-radius: 22px;
+    padding: 25px;
+    box-shadow: 0 15px 50px #0008;
+}
+
+h1 {
+    text-align: center;
+    color: #ffcf70;
+}
+
+.subtitle {
+    text-align: center;
+    color: #aaa;
+    margin-bottom: 25px;
+}
+
+.score {
+    text-align: center;
+    background: #30294e;
+    padding: 25px;
+    border-radius: 16px;
+    margin-bottom: 20px;
+}
+
+.score h2 {
+    margin: 0;
+    color: #aaa;
+}
+
+#total {
+    font-size: 65px;
+    font-weight: bold;
+    color: #ffcf70;
+}
+
+#remaining {
+    color: #aaa;
+}
+
+.players {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.player-box {
+    background: #30294e;
+    padding: 15px;
+    border-radius: 14px;
+}
+
+.player-box h3 {
+    margin-top: 0;
+}
+
+.cards {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.card {
+    width: 45px;
+    height: 60px;
+    background: #fff;
+    color: #282044;
+    border: none;
+    border-radius: 8px;
+    font-size: 20px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: .2s;
+}
+
+.card:hover {
+    transform: translateY(-6px);
+    background: #ffcf70;
+}
+
+.card:disabled {
+    background: #777;
+    color: #bbb;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.item {
+    background: #7655bd;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 10px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.item:hover {
+    background: #9876e5;
+}
+
+.item:disabled {
+    opacity: .4;
+    cursor: not-allowed;
+}
+
+.log {
+    height: 170px;
+    overflow-y: auto;
+    background: #151326;
+    border-radius: 12px;
+    padding: 15px;
+    margin-bottom: 18px;
+    font-size: 14px;
+    line-height: 1.8;
+}
+
+.log p {
+    margin: 2px 0;
+}
+
+.status {
+    text-align: center;
+    font-size: 18px;
+    color: #ffcf70;
+    min-height: 28px;
+}
+
+.controls {
+    text-align: center;
+}
+
+.main-btn {
+    background: #ffcf70;
+    color: #292044;
+    border: none;
+    border-radius: 10px;
+    padding: 13px 25px;
+    font-weight: bold;
+    cursor: pointer;
+    margin: 5px;
+}
+
+.main-btn:hover {
+    background: #ffe2a4;
+}
+
+@media(max-width: 550px) {
+    .players {
+        grid-template-columns: 1fr;
+    }
+
+    #total {
+        font-size: 48px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div class="game">
+
+    <h1>🍦 베스킨라빈스 31</h1>
+    <div class="subtitle">STRATEGY CARD BATTLE</div>
+
+    <div class="score">
+        <h2>CURRENT NUMBER</h2>
+        <div id="total">0</div>
+        <div id="remaining">31까지 31 남음</div>
+    </div>
+
+    <div class="players">
+
+        <div class="player-box">
+            <h3>🤖 AI PLAYER</h3>
+            <p>남은 카드: <span id="aiCount">6</span>장</p>
+            <div id="aiCards" class="cards"></div>
+            <p>보유 아이템</p>
+            <div id="aiItems" class="items"></div>
+        </div>
+
+        <div class="player-box">
+            <h3>🧑 PLAYER</h3>
+            <p>남은 카드: <span id="playerCount">6</span>장</p>
+            <div id="playerCards" class="cards"></div>
+            <p>보유 아이템</p>
+            <div id="playerItems" class="items"></div>
+        </div>
+
+    </div>
+
+    <div class="status" id="status">
+        당신의 턴입니다!
+    </div>
+
+    <h3>📜 GAME LOG</h3>
+    <div class="log" id="log"></div>
+
+    <div class="controls">
+        <button class="main-btn" onclick="restartGame()">
+            🔄 새 게임
+        </button>
+    </div>
+
+</div>
+
+<script>
+
+const TARGET = 31;
+
+const CARD_DECK = [1,2,3,4,5,6];
+
+const ITEM_POOL = [
+    "REVERSE(-3)",
+    "REVERSE(-5)",
+    "DOUBLE TURN",
+    "SKIP PASS"
+];
+
+let total = 0;
+let playerDeck = [];
+let aiDeck = [];
+
+let playerItems = [];
+let aiItems = [];
+
+let turn = "player";
+let gameOver = false;
+let busy = false;
+
+// 카드 섞기
+function shuffle(array) {
+    return [...array].sort(() => Math.random() - 0.5);
+}
+
+// 아이템 지급
+function randomItems() {
+    return shuffle(ITEM_POOL).slice(0,2);
+}
+
+// 로그
+function log(message) {
+    const area = document.getElementById("log");
+    const p = document.createElement("p");
+    p.textContent = message;
+    area.appendChild(p);
+    area.scrollTop = area.scrollHeight;
+}
+
+// 화면 업데이트
+function updateUI() {
+
+    document.getElementById("total").textContent = total;
+
+    document.getElementById("remaining").textContent =
+        `31까지 ${TARGET-total} 남음`;
+
+    document.getElementById("playerCount").textContent =
+        playerDeck.length;
+
+    document.getElementById("aiCount").textContent =
+        aiDeck.length;
+
+    document.getElementById("status").textContent =
+        gameOver ? "게임 종료" :
+        turn === "player" ? "당신의 턴입니다!" : "AI의 턴입니다...";
+
+    renderCards();
+    renderItems();
+}
+
+// 카드 렌더링
+function renderCards() {
+
+    const playerArea = document.getElementById("playerCards");
+    const aiArea = document.getElementById("aiCards");
+
+    playerArea.innerHTML = "";
+    aiArea.innerHTML = "";
+
+    playerDeck.forEach(card => {
+
+        const button = document.createElement("button");
+
+        button.className = "card";
+        button.textContent = card;
+        button.disabled = gameOver || turn !== "player" || busy;
+
+        button.onclick = () => playCard(card);
+
+        playerArea.appendChild(button);
+    });
+
+    aiDeck.forEach(card => {
+
+        const button = document.createElement("button");
+
+        button.className = "card";
+        button.textContent = "?";
+        button.disabled = true;
+
+        aiArea.appendChild(button);
+    });
+}
+
+// 아이템 렌더링
+function renderItems() {
+
+    const playerArea = document.getElementById("playerItems");
+    const aiArea = document.getElementById("aiItems");
+
+    playerArea.innerHTML = "";
+    aiArea.innerHTML = "";
+
+    playerItems.forEach(item => {
+
+        const button = document.createElement("button");
+
+        button.className = "item";
+        button.textContent = item;
+
+        button.disabled = gameOver || turn !== "player" || busy;
+
+        button.onclick = () => useItem(item);
+
+        playerArea.appendChild(button);
+    });
+
+    aiItems.forEach(() => {
+
+        const button = document.createElement("button");
+
+        button.className = "item";
+        button.textContent = "HIDDEN";
+
+        button.disabled = true;
+
+        aiArea.appendChild(button);
+    });
+}
+
+// 카드 리필
+function refillDeck(who) {
+
+    if (who.length === 0) {
+
+        who.push(...shuffle(CARD_DECK));
+
+        log("🔄 카드 6장이 모두 소진되어 덱이 리필되었습니다!");
+    }
+}
+
+// 버스트 판정
+function checkBust(who) {
+
+    if (total > TARGET) {
+
+        gameOver = true;
+
+        const winner = who === "player" ? "AI" : "플레이어";
+
+        log(`💥 ${who === "player" ? "플레이어" : "AI"} BUST!`);
+
+        log(`🏆 ${winner} 승리!`);
+
+        document.getElementById("status").textContent =
+            `${winner} 승리!`;
+
+        updateUI();
+
+        return true;
+    }
+
+    return false;
+}
+
+// 카드 사용
+function playCard(card, who = "player") {
+
+    if (gameOver || busy) return;
+
+    if (who === "player" && turn !== "player") return;
+
+    const deck = who === "player" ? playerDeck : aiDeck;
+
+    if (!deck.includes(card)) return;
+
+    deck.splice(deck.indexOf(card),1);
+
+    total += card;
+
+    log(`${who === "player" ? "🧑 플레이어" : "🤖 AI"}: ${card} 사용`);
+
+    log(`현재 합계: ${total}`);
+
+    if (checkBust(who)) return;
+
+    refillDeck(deck);
+
+    updateUI();
+
+    if (who === "player") {
+
+        turn = "ai";
+        updateUI();
+
+        setTimeout(aiTurn, 900);
+
+    } else {
+
+        turn = "player";
+        updateUI();
+    }
+}
+
+// 아이템 사용
+function useItem(item, who = "player") {
+
+    if (gameOver || busy) return;
+
+    if (who === "player" && turn !== "player") return;
+
+    const items = who === "player" ? playerItems : aiItems;
+
+    const index = items.indexOf(item);
+
+    if (index === -1) return;
+
+    items.splice(index,1);
+
+    log(`${who === "player" ? "🧑 플레이어" : "🤖 AI"}: ${item} 사용`);
+
+    if (item === "REVERSE(-3)") {
+
+        total = Math.max(0,total-3);
+
+        log(`합계 -3 → ${total}`);
+
+    }
+
+    else if (item === "REVERSE(-5)") {
+
+        total = Math.max(0,total-5);
+
+        log(`합계 -5 → ${total}`);
+
+    }
+
+    else if (item === "SKIP PASS") {
+
+        log("상대방의 턴을 건너뜁니다!");
+
+        updateUI();
+
+        if (who === "player") {
+
+            turn = "player";
+            setTimeout(aiTurn, 900);
+
+        } else {
+
+            turn = "player";
+        }
+
+        updateUI();
+        return;
+    }
+
+    else if (item === "DOUBLE TURN") {
+
+        log("⚡ DOUBLE TURN 발동!");
+
+        if (who === "player") {
+
+            updateUI();
+
+            busy = true;
+
+            setTimeout(() => {
+                busy = false;
+                updateUI();
+                log("두 장의 카드를 연속으로 선택하세요.");
+            }, 200);
+
+            doubleTurn = 2;
+            return;
+
+        } else {
+
+            aiDoubleTurn();
+            return;
+        }
+    }
+
+    updateUI();
+
+    if (who === "player") {
+
+        turn = "ai";
+        updateUI();
+
+        setTimeout(aiTurn,900);
+
+    } else {
+
+        turn = "player";
+        updateUI();
+    }
+}
+
+let doubleTurn = 0;
+
+// DOUBLE TURN 카드 선택 처리
+function aiDoubleTurn() {
+
+    for (let i = 0; i < 2; i++) {
+
+        if (aiDeck.length === 0) refillDeck(aiDeck);
+
+        const card = chooseAICard();
+
+        aiDeck.splice(aiDeck.indexOf(card),1);
+
+        total += card;
+
+        log(`🤖 AI 콤보 카드: ${card}`);
+
+        if (checkBust("ai")) return;
+    }
+
+    refillDeck(aiDeck);
+
+    turn = "player";
+    updateUI();
+}
+
+// 플레이어 카드 클릭 이벤트 보조
+const originalPlayCard = playCard;
+
+playCard = function(card, who = "player") {
+
+    if (who === "player" && doubleTurn > 0) {
+
+        if (!playerDeck.includes(card)) return;
+
+        playerDeck.splice(playerDeck.indexOf(card),1);
+        total += card;
+
+        doubleTurn--;
+
+        log(`🧑 콤보 카드: ${card}`);
+        log(`현재 합계: ${total}`);
+
+        if (checkBust("player")) {
+            doubleTurn = 0;
+            return;
+        }
+
+        refillDeck(playerDeck);
+
+        if (doubleTurn === 0) {
+
+            turn = "ai";
+            updateUI();
+
+            setTimeout(aiTurn,900);
+
+        } else {
+
+            updateUI();
+        }
+
+        return;
+    }
+
+    originalPlayCard(card,who);
+};
+
+// 전략 AI
+function chooseAICard() {
+
+    const goals = [3,10,17,24,31];
+
+    let bestCard = aiDeck[0];
+    let bestScore = -Infinity;
+
+    for (const card of aiDeck) {
+
+        let next = total + card;
+
+        if (next > TARGET) continue;
+
+        let score = 0;
+
+        // 목표 숫자에 가까워지는 전략
+        for (const goal of goals) {
+
+            if (next === goal) {
+                score += 100;
+            }
+
+            else if (next < goal) {
+                score += 1 / (goal-next);
+            }
+        }
+
+        // 상대가 대응하기 어려운 상황 고려
+        score += Math.random() * 0.3;
+
+        if (score > bestScore) {
+
+            bestScore = score;
+            bestCard = card;
+        }
+    }
+
+    // 낼 수 있는 카드가 없으면 버스트
+    if (bestScore === -Infinity) {
+
+        return Math.max(...aiDeck);
+    }
+
+    return bestCard;
+}
+
+// AI 아이템 판단
+function aiTurn() {
+
+    if (gameOver) return;
+
+    if (aiDeck.length === 0) refillDeck(aiDeck);
+
+    // 위기 상황에서 아이템 활용
+    if (aiItems.length > 0 && Math.random() < 0.35) {
+
+        let reverse = aiItems.find(item =>
+            item.startsWith("REVERSE")
+        );
+
+        if (reverse && total >= 20) {
+
+            useItem(reverse,"ai");
+            return;
+        }
+    }
+
+    // DOUBLE TURN 활용
+    if (aiItems.includes("DOUBLE TURN") &&
+        total <= 17 && Math.random() < 0.2) {
+
+        useItem("DOUBLE TURN","ai");
+        return;
+    }
+
+    const card = chooseAICard();
+
+    playCard(card,"ai");
+}
+
+// 새 게임
+function restartGame() {
+
+    total = 0;
+
+    playerDeck = shuffle(CARD_DECK);
+    aiDeck = shuffle(CARD_DECK);
+
+    playerItems = randomItems();
+    aiItems = randomItems();
+
+    turn = "player";
+    gameOver = false;
+    busy = false;
+    doubleTurn = 0;
+
+    document.getElementById("log").innerHTML = "";
+
+    log("🎮 새로운 게임이 시작되었습니다!");
+
+    log("플레이어와 AI에게 각각 2개의 아이템이 지급되었습니다.");
+
+    updateUI();
+}
+
+restartGame();
+
+</script>
+
+</body>
+</html>
+

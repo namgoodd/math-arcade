@@ -1,0 +1,1112 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DERIVATIVE DASH : INTEGRAL ZERO</title>
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800&family=Noto+Sans+KR:wght@400;500;700;900&display=swap');
+
+:root {
+  --bg:#080a18;
+  --panel:#11162c;
+  --purple:#a66cff;
+  --cyan:#42eaff;
+  --pink:#ff579d;
+  --green:#65ffbd;
+  --white:#f4f5ff;
+}
+
+* { box-sizing:border-box; }
+
+body {
+  margin:0;
+  min-height:100vh;
+  background:
+    radial-gradient(ellipse at 50% 0%,#26204d 0%,transparent 55%),
+    var(--bg);
+  color:var(--white);
+  font-family:'Noto Sans KR',sans-serif;
+  padding:20px;
+}
+
+button { font-family:inherit; }
+
+.app {
+  max-width:1100px;
+  margin:auto;
+}
+
+header {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  flex-wrap:wrap;
+  gap:15px;
+  margin-bottom:20px;
+}
+
+.logo {
+  font-family:Orbitron,sans-serif;
+  font-size:clamp(19px,4vw,30px);
+  font-weight:800;
+  letter-spacing:2px;
+  color:var(--cyan);
+  text-shadow:0 0 20px #42eaff80;
+}
+
+.logo span { color:var(--purple); }
+
+.level-tag {
+  background:#27203f;
+  color:#d7bdff;
+  border:1px solid #7652ae;
+  border-radius:30px;
+  padding:8px 16px;
+  font-size:12px;
+}
+
+.dashboard {
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:12px;
+  margin-bottom:14px;
+}
+
+.stat {
+  background:linear-gradient(145deg,#171c37,#101327);
+  border:1px solid #303459;
+  border-radius:13px;
+  padding:14px;
+  min-width:0;
+}
+
+.stat small {
+  display:block;
+  color:#8c96bb;
+  font-size:11px;
+  letter-spacing:1px;
+  margin-bottom:7px;
+}
+
+.stat strong {
+  font-family:Orbitron,sans-serif;
+  font-size:21px;
+  white-space:nowrap;
+}
+
+.cyan { color:var(--cyan); }
+.purple { color:var(--purple); }
+.pink { color:var(--pink); }
+.green { color:var(--green); }
+
+.progress-wrap {
+  background:#181a32;
+  height:7px;
+  border-radius:20px;
+  overflow:hidden;
+  margin-bottom:17px;
+}
+
+#progress {
+  height:100%;
+  width:0%;
+  background:linear-gradient(90deg,var(--purple),var(--cyan));
+  box-shadow:0 0 12px var(--cyan);
+  transition:width .15s;
+}
+
+.game-frame {
+  position:relative;
+  background:#0c1024;
+  border:1px solid #55418a;
+  border-radius:18px;
+  padding:7px;
+  box-shadow:0 0 35px #7550d522;
+  overflow:hidden;
+}
+
+canvas {
+  display:block;
+  width:100%;
+  border-radius:12px;
+  background:#0d1228;
+}
+
+.overlay {
+  position:absolute;
+  inset:7px;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  background:#080a18d9;
+  backdrop-filter:blur(8px);
+  border-radius:12px;
+  z-index:3;
+  padding:15px;
+}
+
+.overlay-content {
+  text-align:center;
+  max-width:450px;
+}
+
+.overlay h2 {
+  font-family:Orbitron,sans-serif;
+  font-size:clamp(23px,5vw,38px);
+  color:var(--cyan);
+  margin:0 0 12px;
+  text-shadow:0 0 25px #42eaff88;
+}
+
+.overlay p {
+  color:#b9c1e0;
+  line-height:1.8;
+  font-size:13px;
+}
+
+.primary-btn {
+  border:0;
+  padding:14px 28px;
+  background:linear-gradient(100deg,#8a50e9,#38d9ed);
+  color:white;
+  border-radius:9px;
+  font-weight:900;
+  cursor:pointer;
+  margin-top:12px;
+  box-shadow:0 0 20px #7452db55;
+  transition:.2s;
+}
+
+.primary-btn:hover {
+  transform:translateY(-3px);
+  box-shadow:0 0 30px #42eaff66;
+}
+
+.info-grid {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:13px;
+  margin-top:15px;
+}
+
+.panel {
+  background:linear-gradient(145deg,#171a34,#101327);
+  border:1px solid #2d3155;
+  border-radius:14px;
+  padding:16px;
+  min-width:0;
+}
+
+.panel h3 {
+  margin:0 0 13px;
+  font-size:13px;
+  letter-spacing:1px;
+  color:#c3b0ff;
+}
+
+.formula {
+  font-family:Orbitron,sans-serif;
+  font-size:13px;
+  line-height:2.3;
+  color:#e1d6ff;
+}
+
+.formula b { color:var(--cyan); }
+
+#mathInfo {
+  font-size:12px;
+  line-height:2;
+  color:#b8c4e6;
+}
+
+.energy-bar {
+  height:9px;
+  background:#252440;
+  border-radius:20px;
+  margin-top:9px;
+  overflow:hidden;
+}
+
+#energyFill {
+  height:100%;
+  width:0%;
+  background:linear-gradient(90deg,#a66cff,#42eaff);
+  transition:width .2s;
+}
+
+.controls {
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:center;
+  gap:10px;
+  margin-top:15px;
+}
+
+.control-btn {
+  background:#191d39;
+  color:#dce4ff;
+  border:1px solid #41456d;
+  border-radius:9px;
+  padding:11px 17px;
+  cursor:pointer;
+}
+
+.control-btn:hover {
+  border-color:var(--cyan);
+  color:var(--cyan);
+}
+
+.help {
+  text-align:center;
+  color:#727eaa;
+  font-size:11px;
+  margin:17px 0;
+  line-height:2;
+}
+
+@media(max-width:650px) {
+  body { padding:10px; }
+  .dashboard { grid-template-columns:repeat(2,1fr); }
+  .info-grid { grid-template-columns:1fr; }
+  .stat strong { font-size:17px; }
+}
+</style>
+</head>
+
+<body>
+<div class="app">
+
+<header>
+  <div class="logo">∫ DERIVATIVE <span>DASH</span></div>
+  <div class="level-tag">MATHEMATICS ARCADE / SEASON 01</div>
+</header>
+
+<section class="dashboard">
+  <div class="stat">
+    <small>SCORE</small>
+    <strong class="cyan" id="score">000000</strong>
+  </div>
+  <div class="stat">
+    <small>ENERGY</small>
+    <strong class="purple" id="energy">0.0</strong>
+  </div>
+  <div class="stat">
+    <small>DERIVATIVE</small>
+    <strong class="pink" id="slope">0.000</strong>
+  </div>
+  <div class="stat">
+    <small>PROGRESS</small>
+    <strong class="green" id="distance">0%</strong>
+  </div>
+</section>
+
+<div class="progress-wrap">
+  <div id="progress"></div>
+</div>
+
+<div class="game-frame">
+
+  <canvas id="game" width="960" height="540"></canvas>
+
+  <div class="overlay" id="overlay">
+    <div class="overlay-content">
+      <h2 id="overlayTitle">DERIVATIVE DASH</h2>
+      <p id="overlayText">
+        미분으로 기울기를 분석하고<br>
+        적분으로 에너지를 모아 장애물을 돌파하세요.<br><br>
+        ← → 이동 / SPACE 대시 / P 일시정지
+      </p>
+      <button class="primary-btn" id="startBtn" onclick="startGame()">
+        START GAME
+      </button>
+    </div>
+  </div>
+
+</div>
+
+<div class="info-grid">
+
+  <div class="panel">
+    <h3>∑ MATHEMATICAL ENGINE</h3>
+    <div class="formula">
+      f(x) = 0.02x² - 0.4x + 3<br>
+      f'(x) = 0.04x - 0.4<br>
+      E = ∫ |f'(x)| dx
+    </div>
+    <div class="energy-bar">
+      <div id="energyFill"></div>
+    </div>
+    <p style="color:#7f89ac;font-size:11px">
+      이동 구간의 정적분을 이용하여 에너지를 획득합니다.
+    </p>
+  </div>
+
+  <div class="panel">
+    <h3>LIVE CALCULATION</h3>
+    <div id="mathInfo">
+      현재 위치: 0.000<br>
+      함수값: 3.000<br>
+      도함수: -0.400<br>
+      누적 적분: 0.000
+    </div>
+  </div>
+
+</div>
+
+<div class="controls">
+  <button class="control-btn" onclick="togglePause()">Ⅱ PAUSE</button>
+  <button class="control-btn" onclick="startGame()">↻ RESTART</button>
+  <button class="control-btn" onclick="toggleMath()">∫ MATH INFO</button>
+</div>
+
+<div class="help">
+  KEYBOARD: ← → MOVE &nbsp; | &nbsp; SPACE DASH &nbsp; | &nbsp; P PAUSE &nbsp; | &nbsp; R RESTART
+  <br>
+  대시를 사용해 장애물을 돌파하세요. 에너지는 이동 구간의 정적분으로 획득합니다.
+</div>
+
+</div>
+
+<script>
+"use strict";
+
+// ========================================
+// 1. 게임 기본 설정
+// ========================================
+
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+const W = canvas.width;
+const H = canvas.height;
+
+const FINISH = 60;
+const SCALE = 42;
+const PLAYER_SCREEN_X = 220;
+
+let player;
+let obstacles;
+let particles;
+let pickups;
+
+let running = false;
+let paused = false;
+let gameEnded = false;
+
+let score = 0;
+let energy = 0;
+let totalIntegral = 0;
+let combo = 0;
+let stage = 1;
+
+let dashTime = 0;
+let dashCooldown = 0;
+let lastTime = 0;
+let animationTime = 0;
+
+const keys = {};
+
+let showMath = true;
+
+// ========================================
+// 2. 미적분 수학 엔진
+// ========================================
+
+// 함수
+function f(x) {
+  return 0.02*x*x - 0.4*x + 3;
+}
+
+// 도함수
+function derivative(x) {
+  return 0.04*x - 0.4;
+}
+
+// 정적분: 사다리꼴 공식으로 |f'(x)| 계산
+function integral(a,b) {
+  if (b <= a) return 0;
+
+  const n = 100;
+  const dx = (b-a)/n;
+  let sum = 0;
+
+  for(let i=0;i<n;i++) {
+    const x1 = a+i*dx;
+    const x2 = x1+dx;
+
+    sum += (
+      Math.abs(derivative(x1))+
+      Math.abs(derivative(x2))
+    )*0.5*dx;
+  }
+
+  return sum;
+}
+
+// 그래프 좌표 변환
+function graphY(x) {
+  return 365 - f(x)*SCALE;
+}
+
+// ========================================
+// 3. 게임 초기화
+// ========================================
+
+function startGame() {
+
+  player = {
+    x:0,
+    y:0,
+    previousX:0
+  };
+
+  obstacles = [];
+  particles = [];
+  pickups = [];
+
+  score = 0;
+  energy = 0;
+  totalIntegral = 0;
+  combo = 0;
+  stage = 1;
+
+  dashTime = 0;
+  dashCooldown = 0;
+
+  gameEnded = false;
+  paused = false;
+  running = true;
+
+  // 장애물 생성
+  for(let i=0;i<12;i++) {
+    const x = 4+i*4.7;
+
+    obstacles.push({
+      x:x,
+      passed:false,
+      cost:10+(i%3)*5,
+      broken:false,
+      width:0.65
+    });
+  }
+
+  // 에너지 구슬 생성
+  for(let i=0;i<15;i++) {
+    pickups.push({
+      x:2.5+i*3.8,
+      collected:false,
+      value:8
+    });
+  }
+
+  document.getElementById("overlay").style.display="none";
+
+  lastTime = performance.now();
+
+  requestAnimationFrame(loop);
+}
+
+// ========================================
+// 4. 대시 시스템
+// ========================================
+
+function dash() {
+
+  if(!running || paused || gameEnded) return;
+
+  if(dashCooldown>0 || energy<12) return;
+
+  energy -= 12;
+  dashTime = 0.65;
+  dashCooldown = 1.1;
+
+  addParticles(
+    PLAYER_SCREEN_X,
+    graphY(player.x)-15,
+    "#42eaff",
+    18
+  );
+
+  score += 10;
+}
+
+// ========================================
+// 5. 파티클 시스템
+// ========================================
+
+function addParticles(x,y,color,count) {
+
+  for(let i=0;i<count;i++) {
+    const angle=Math.random()*Math.PI*2;
+    const speed=1+Math.random()*4;
+
+    particles.push({
+      x:x,
+      y:y,
+      vx:Math.cos(angle)*speed,
+      vy:Math.sin(angle)*speed,
+      life:0.5+Math.random()*0.5,
+      maxLife:1,
+      color:color,
+      size:2+Math.random()*4
+    });
+  }
+}
+
+function updateParticles(dt) {
+
+  for(let p of particles) {
+    p.x+=p.vx*dt*60;
+    p.y+=p.vy*dt*60;
+    p.life-=dt;
+    p.vy+=0.04;
+  }
+
+  particles=particles.filter(p=>p.life>0);
+}
+
+// ========================================
+// 6. 게임 업데이트
+// ========================================
+
+function update(dt) {
+
+  if(!running || paused) return;
+
+  animationTime+=dt;
+
+  const oldX=player.x;
+
+  let speed=3.2;
+
+  // 도함수의 크기를 이동 속도에 반영
+  speed += Math.abs(derivative(player.x))*0.7;
+
+  if(dashTime>0) {
+    speed*=2.7;
+    dashTime=Math.max(0,dashTime-dt);
+  }
+
+  if(dashCooldown>0) {
+    dashCooldown=Math.max(0,dashCooldown-dt);
+  }
+
+  // 좌우 이동
+  if(keys.ArrowRight) {
+    player.x+=speed*dt;
+  }
+
+  if(keys.ArrowLeft) {
+    player.x=Math.max(0,player.x-speed*dt);
+  }
+
+  player.x=Math.min(FINISH,player.x);
+
+  // 적분 에너지 계산
+  if(player.x>oldX) {
+
+    const gained=integral(oldX,player.x)*18;
+
+    energy=Math.min(100,energy+gained);
+    totalIntegral+=integral(oldX,player.x);
+
+    score+=(player.x-oldX)*20;
+  }
+
+  // 에너지 구슬
+  for(let p of pickups) {
+
+    if(p.collected) continue;
+
+    if(Math.abs(player.x-p.x)<0.42) {
+
+      p.collected=true;
+      energy=Math.min(100,energy+p.value);
+      score+=50+combo*5;
+      combo++;
+
+      addParticles(
+        PLAYER_SCREEN_X,
+        graphY(player.x)-20,
+        "#65ffbd",
+        15
+      );
+    }
+  }
+
+  // 장애물 충돌
+  for(let o of obstacles) {
+
+    if(o.passed || o.broken) continue;
+
+    if(Math.abs(player.x-o.x)<o.width/2+0.13) {
+
+      if(dashTime>0 && energy>=o.cost) {
+
+        energy-=o.cost;
+        o.broken=true;
+        o.passed=true;
+
+        score+=150+combo*20;
+        combo++;
+
+        addParticles(
+          PLAYER_SCREEN_X,
+          graphY(player.x)-15,
+          "#ff579d",
+          28
+        );
+
+      } else {
+
+        endGame(false);
+        return;
+      }
+    }
+
+    if(player.x>o.x+0.5) {
+      o.passed=true;
+    }
+  }
+
+  // 콤보 보너스 초기화
+  if(player.x===oldX) {
+    combo=0;
+  }
+
+  // 스테이지
+  stage=1+Math.floor(player.x/12);
+
+  updateParticles(dt);
+
+  if(player.x>=FINISH) {
+    endGame(true);
+  }
+
+  updateHUD();
+}
+
+// ========================================
+// 7. 게임 종료
+// ========================================
+
+function endGame(clear) {
+
+  running=false;
+  gameEnded=true;
+
+  const title=clear?"MISSION COMPLETE":"SYSTEM FAILURE";
+
+  const message=clear
+    ? `최종 점수 ${Math.floor(score).toLocaleString()}점<br>
+       총 누적 적분값: ${totalIntegral.toFixed(3)}<br>
+       모든 장애물을 돌파했습니다!`
+    : `장애물에 충돌했습니다.<br>
+       최종 점수: ${Math.floor(score).toLocaleString()}점<br>
+       적분 에너지를 더 모아 다시 도전하세요!`;
+
+  document.getElementById("overlayTitle").textContent=title;
+  document.getElementById("overlayText").innerHTML=message;
+  document.getElementById("startBtn").textContent="PLAY AGAIN";
+  document.getElementById("overlay").style.display="flex";
+
+  draw();
+}
+
+// ========================================
+// 8. 화면 그리기
+// ========================================
+
+function draw() {
+
+  ctx.clearRect(0,0,W,H);
+
+  const camera=player ? player.x : 0;
+
+  // 배경
+  const bg=ctx.createLinearGradient(0,0,0,H);
+  bg.addColorStop(0,"#111831");
+  bg.addColorStop(1,"#090d1d");
+
+  ctx.fillStyle=bg;
+  ctx.fillRect(0,0,W,H);
+
+  // 별
+  for(let i=0;i<75;i++) {
+    const sx=(i*137+animationTime*8)%W;
+    const sy=(i*83)%H;
+
+    ctx.fillStyle="#7d94d0";
+    ctx.globalAlpha=0.25+(i%4)*0.12;
+    ctx.fillRect(sx,sy,2,2);
+  }
+
+  ctx.globalAlpha=1;
+
+  drawGrid(camera);
+  drawGraph(camera);
+  drawPickups(camera);
+  drawObstacles(camera);
+  drawPlayer(camera);
+  drawParticles();
+  drawLabels(camera);
+}
+
+// 격자
+function drawGrid(camera) {
+
+  ctx.strokeStyle="#26304e";
+  ctx.lineWidth=1;
+
+  const offset=(camera*SCALE)%SCALE;
+
+  for(let x=-offset;x<W;x+=SCALE) {
+    ctx.beginPath();
+    ctx.moveTo(x,0);
+    ctx.lineTo(x,H);
+    ctx.stroke();
+  }
+
+  for(let y=0;y<H;y+=SCALE) {
+    ctx.beginPath();
+    ctx.moveTo(0,y);
+    ctx.lineTo(W,y);
+    ctx.stroke();
+  }
+
+  // 기준선
+  ctx.strokeStyle="#8791b5";
+  ctx.globalAlpha=0.55;
+  ctx.beginPath();
+  ctx.moveTo(0,365);
+  ctx.lineTo(W,365);
+  ctx.stroke();
+  ctx.globalAlpha=1;
+}
+
+// 그래프
+function drawGraph(camera) {
+
+  ctx.save();
+
+  ctx.beginPath();
+
+  for(let px=0;px<=W;px+=3) {
+
+    const worldX=camera+(px-PLAYER_SCREEN_X)/SCALE;
+    const py=graphY(worldX);
+
+    if(px===0) ctx.moveTo(px,py);
+    else ctx.lineTo(px,py);
+  }
+
+  ctx.strokeStyle="#b36cff";
+  ctx.lineWidth=4;
+  ctx.shadowBlur=17;
+  ctx.shadowColor="#a66cff";
+  ctx.stroke();
+
+  ctx.shadowBlur=0;
+  ctx.restore();
+
+  // 접선
+  const x=player.x;
+  const slope=derivative(x);
+  const centerY=graphY(x);
+
+  ctx.beginPath();
+  ctx.moveTo(
+    PLAYER_SCREEN_X-100,
+    centerY+slope*100
+  );
+  ctx.lineTo(
+    PLAYER_SCREEN_X+100,
+    centerY-slope*100
+  );
+
+  ctx.strokeStyle="#42eaff";
+  ctx.lineWidth=2;
+  ctx.setLineDash([7,6]);
+  ctx.shadowBlur=8;
+  ctx.shadowColor="#42eaff";
+  ctx.stroke();
+
+  ctx.setLineDash([]);
+  ctx.shadowBlur=0;
+
+  // 현재 접점
+  ctx.fillStyle="#ffffff";
+  ctx.beginPath();
+  ctx.arc(PLAYER_SCREEN_X,centerY,5,0,Math.PI*2);
+  ctx.fill();
+}
+
+// 에너지 구슬
+function drawPickups(camera) {
+
+  for(let p of pickups) {
+
+    if(p.collected) continue;
+
+    const sx=PLAYER_SCREEN_X+(p.x-camera)*SCALE;
+
+    if(sx<-30||sx>W+30) continue;
+
+    const sy=graphY(p.x)-28+Math.sin(animationTime*4+p.x)*5;
+
+    ctx.shadowBlur=18;
+    ctx.shadowColor="#65ffbd";
+    ctx.fillStyle="#65ffbd";
+
+    ctx.beginPath();
+    ctx.arc(sx,sy,8,0,Math.PI*2);
+    ctx.fill();
+
+    ctx.shadowBlur=0;
+  }
+}
+
+// 장애물
+function drawObstacles(camera) {
+
+  for(let o of obstacles) {
+
+    if(o.broken) continue;
+
+    const sx=PLAYER_SCREEN_X+(o.x-camera)*SCALE;
+
+    if(sx<-50||sx>W+50) continue;
+
+    const sy=graphY(o.x);
+
+    ctx.save();
+
+    ctx.shadowBlur=20;
+    ctx.shadowColor="#ff579d";
+    ctx.fillStyle="#ff579d";
+
+    ctx.fillRect(sx-15,sy-42,30,42);
+
+    ctx.shadowBlur=0;
+    ctx.fillStyle="#fff";
+    ctx.font="11px Arial";
+    ctx.textAlign="center";
+    ctx.fillText(o.cost,sx,sy-50);
+
+    ctx.restore();
+  }
+}
+
+// 플레이어
+function drawPlayer(camera) {
+
+  if(!player) return;
+
+  const x=PLAYER_SCREEN_X;
+  const y=graphY(player.x)-17;
+
+  // 대시 잔상
+  if(dashTime>0) {
+
+    ctx.globalAlpha=0.4;
+    ctx.fillStyle="#42eaff";
+    ctx.fillRect(x-32,y-12,25,25);
+    ctx.globalAlpha=1;
+  }
+
+  // 캐릭터
+  ctx.save();
+
+  ctx.shadowBlur=25;
+  ctx.shadowColor="#ffe47c";
+
+  ctx.fillStyle="#ffe47c";
+
+  ctx.beginPath();
+  ctx.roundRect(x-12,y-15,24,28,7);
+  ctx.fill();
+
+  ctx.restore();
+
+  ctx.fillStyle="#292044";
+  ctx.fillRect(x-7,y-8,4,4);
+  ctx.fillRect(x+3,y-8,4,4);
+}
+
+// 파티클
+function drawParticles() {
+
+  for(let p of particles) {
+
+    ctx.globalAlpha=Math.max(0,p.life/p.maxLife);
+    ctx.fillStyle=p.color;
+    ctx.beginPath();
+    ctx.arc(p.x,p.y,p.size,0,Math.PI*2);
+    ctx.fill();
+  }
+
+  ctx.globalAlpha=1;
+}
+
+// 게임 내 정보
+function drawLabels(camera) {
+
+  ctx.fillStyle="#aeb9dd";
+  ctx.font="13px Arial";
+  ctx.textAlign="left";
+
+  ctx.fillText(
+    "STAGE "+stage,
+    20,28
+  );
+
+  ctx.fillText(
+    "DISTANCE "+player.x.toFixed(2)+" / "+FINISH,
+    20,50
+  );
+
+  ctx.fillText(
+    "DASH "+(dashCooldown<=0?"READY":"COOLDOWN"),
+    20,72
+  );
+
+  // 현재 함수 그래프 좌표
+  ctx.textAlign="right";
+  ctx.fillStyle="#42eaff";
+
+  ctx.fillText(
+    "f(x) = "+f(player.x).toFixed(3),
+    W-20,28
+  );
+
+  ctx.fillText(
+    "f'(x) = "+derivative(player.x).toFixed(3),
+    W-20,50
+  );
+}
+
+// ========================================
+// 9. HUD
+// ========================================
+
+function updateHUD() {
+
+  document.getElementById("score").textContent=
+    Math.floor(score).toString().padStart(6,"0");
+
+  document.getElementById("energy").textContent=
+    energy.toFixed(1);
+
+  document.getElementById("slope").textContent=
+    derivative(player.x).toFixed(3);
+
+  const percent=player.x/FINISH*100;
+
+  document.getElementById("distance").textContent=
+    Math.floor(percent)+"%";
+
+  document.getElementById("progress").style.width=
+    percent+"%";
+
+  document.getElementById("energyFill").style.width=
+    energy+"%";
+
+  document.getElementById("mathInfo").innerHTML=`
+    현재 위치 x: <b style="color:#42eaff">${player.x.toFixed(3)}</b><br>
+    함수값 f(x): <b>${f(player.x).toFixed(3)}</b><br>
+    도함수 f'(x): <b style="color:#ff579d">${derivative(player.x).toFixed(3)}</b><br>
+    누적 적분값: <b style="color:#65ffbd">${totalIntegral.toFixed(4)}</b><br>
+    현재 콤보: <b>${combo}</b>
+  `;
+}
+
+// ========================================
+// 10. 메인 루프
+// ========================================
+
+function loop(now) {
+
+  if(!running || paused) return;
+
+  const dt=Math.min((now-lastTime)/1000,0.04);
+  lastTime=now;
+
+  update(dt);
+  draw();
+
+  if(running && !paused) {
+    requestAnimationFrame(loop);
+  }
+}
+
+// ========================================
+// 11. 일시정지
+// ========================================
+
+function togglePause() {
+
+  if(!running || gameEnded) return;
+
+  paused=!paused;
+
+  if(paused) {
+
+    document.getElementById("overlayTitle").textContent="PAUSED";
+    document.getElementById("overlayText").textContent=
+      "게임이 일시정지되었습니다.";
+
+    document.getElementById("startBtn").textContent="RESUME";
+    document.getElementById("overlay").style.display="flex";
+
+  } else {
+
+    document.getElementById("overlay").style.display="none";
+    lastTime=performance.now();
+
+    requestAnimationFrame(loop);
+  }
+}
+
+// ========================================
+// 12. 키보드
+// ========================================
+
+document.addEventListener("keydown",e=>{
+
+  if(["ArrowLeft","ArrowRight","Space"].includes(e.code)) {
+    e.preventDefault();
+  }
+
+  keys[e.code]=true;
+
+  if(e.repeat) return;
+
+  if(e.code==="Space") dash();
+
+  if(e.code==="KeyP") togglePause();
+
+  if(e.code==="KeyR") startGame();
+});
+
+document.addEventListener("keyup",e=>{
+  keys[e.code]=false;
+});
+
+// 수학 정보 표시
+function toggleMath() {
+
+  showMath=!showMath;
+
+  document.querySelector(".info-grid").style.display=
+    showMath?"grid":"none";
+}
+
+// 초기 화면
+player={x:0};
+draw();
+
+</script>
+</body>
+</html>

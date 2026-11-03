@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SIN WAVE SURVIVAL</title>
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0;
+  min-height:100vh;
+  background:radial-gradient(circle at top,#172b50,#060b19 65%);
+  color:#fff;
+  font-family:Arial,sans-serif;
+  text-align:center;
+}
+.game{
+  width:min(100% - 24px,1000px);
+  margin:25px auto;
+}
+h1{
+  color:#58eaff;
+  letter-spacing:3px;
+  font-size:clamp(25px,5vw,38px);
+  text-shadow:0 0 18px #16bce8;
+  margin-bottom:5px;
+}
+.subtitle{color:#a9c5e9;margin:8px 0 20px}
+.stats{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:10px;
+  margin-bottom:12px;
+}
+.stat{
+  background:linear-gradient(145deg,#1b3156,#101c35);
+  border:1px solid #294b73;
+  border-radius:12px;
+  padding:12px 5px;
+  box-shadow:0 5px 18px #0005;
+}
+.stat small{
+  display:block;color:#91b4d8;font-size:12px;
+  margin-bottom:5px;
+}
+.stat b{font-size:19px;color:#62eaff}
+.canvas-wrap{
+  position:relative;
+  border:2px solid #28cdeb;
+  border-radius:15px;
+  overflow:hidden;
+  box-shadow:0 0 25px #00cfff35;
+  background:#09152b;
+}
+canvas{
+  display:block;width:100%;height:auto;
+}
+.controls{
+  color:#b8cce8;
+  font-size:14px;
+  margin:13px 0;
+  line-height:1.8;
+}
+button{
+  border:0;border-radius:9px;
+  padding:12px 23px;margin:5px;
+  font-weight:bold;font-size:14px;
+  cursor:pointer;
+  background:linear-gradient(135deg,#4ce8ff,#188cdb);
+  color:#061426;
+  transition:.2s;
+}
+button:hover{transform:translateY(-2px);filter:brightness(1.15)}
+button.secondary{
+  background:#263b5e;color:#d8edff;
+  border:1px solid #45668d;
+}
+.overlay{
+  position:absolute;inset:0;
+  display:flex;align-items:center;justify-content:center;
+  background:#061126d9;
+  backdrop-filter:blur(5px);
+  z-index:2;
+}
+.panel{
+  width:min(85%,420px);
+  padding:28px 20px;
+  background:linear-gradient(145deg,#172d50,#0b1830);
+  border:1px solid #38dafa;
+  border-radius:18px;
+  box-shadow:0 0 35px #00cfff40;
+}
+.panel h2{color:#5ceaff;font-size:27px}
+.panel p{color:#b6cce8;line-height:1.7}
+.hidden{display:none}
+.math{
+  margin:18px auto;padding:15px;
+  background:#101f3a;border:1px solid #294a70;
+  border-radius:12px;color:#b9d7f5;
+  line-height:1.8;font-size:14px;
+}
+.math strong{color:#5ceaff}
+@media(max-width:600px){
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .stat{padding:9px}
+}
+</style>
+</head>
+<body>
+<div class="game">
+  <h1>〰 SIN WAVE SURVIVAL</h1>
+  <p class="subtitle">Ride the waves. Avoid obstacles. Reach the goal.</p>
+
+  <div class="stats">
+    <div class="stat"><small>SCORE</small><b id="score">0</b></div>
+    <div class="stat"><small>TIME</small><b id="time">0.0s</b></div>
+    <div class="stat"><small>HEALTH</small><b id="health">♥ ♥ ♥</b></div>
+    <div class="stat"><small>PROGRESS</small><b id="progress">0%</b></div>
+  </div>
+
+  <div class="canvas-wrap">
+    <canvas id="game" width="900" height="480"></canvas>
+
+    <div class="overlay" id="overlay">
+      <div class="panel">
+        <h2 id="panelTitle">SIN WAVE SURVIVAL</h2>
+        <p id="panelText">
+          삼각함수로 움직이는 발판을 타고<br>
+          장애물을 피해 결승점에 도달하세요!
+        </p>
+        <button onclick="startGame()" id="mainButton">GAME START</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="controls">
+    ← → 이동 &nbsp; | &nbsp; SPACE 점프 &nbsp; | &nbsp; P 일시정지 &nbsp; | &nbsp; R 재시작
+  </div>
+
+  <button onclick="startGame()">게임 시작 / 재시작</button>
+  <button class="secondary" onclick="togglePause()">일시정지 / 계속</button>
+
+  <div class="math">
+    <strong>수학 원리</strong><br>
+    발판의 높이: y = A sin(ωt + φ) + b<br>
+    발판의 좌우 위치: x = x₀ + B cos(ωt + φ)<br>
+    진폭 A: 위아래 움직이는 범위<br>
+    각진동수 ω: 움직임의 빠르기를 결정<br>
+    주기 T = 2π / ω
+  </div>
+</div>
+
+<script>
+const canvas=document.getElementById("game");
+const ctx=canvas.getContext("2d");
+const W=900,H=480;
+
+const FINISH=2800;
+const GRAVITY=0.48;
+const keys={};
+
+let player,platforms,obstacles;
+let camera=0,score=0,health=3;
+let startTime=0,elapsed=0;
+let running=false,paused=false,gameEnded=false;
+let lastFrame=0,jumpPressed=false;
+let particles=[];
+let checkpoint=0;
+let animationId=null;
+
+function createPlatforms(){
+  const arr=[];
+  for(let i=0;i<15;i++){
+    arr.push({
+      id:i,
+      baseX:100+i*195,
+      baseY:320-(i%3)*35,
+      ampY:25+(i%3)*12,
+      ampX:12+(i%2)*10,
+      freq:0.0014+(i%3)*0.00018,
+      phase:i*1.45,
+      width:125,
+      height:13
+    });
+  }
+  return arr;
+}
+
+function platformPosition(p,t){
+  return {
+    x:p.baseX+p.ampX*Math.cos(p.freq*t+p.phase),
+    y:p.baseY+p.ampY*Math.sin(p.freq*t+p.phase)
+  };
+}
+
+function startGame(){
+  cancelAnimationFrame(animationId);
+
+  player={
+    x:65,y:260,w:25,h:32,
+    vx:0,vy:0,grounded:false,
+    platformId:null,previousPlatformX:0,
+    invincible:0
+  };
+
+  platforms=createPlatforms();
+  obstacles=[390,690,1030,1370,1740,2110,2470];
+  particles=[];
+  camera=0;
+  score=0;
+  health=3;
+  checkpoint=0;
+  elapsed=0;
+  startTime=performance.now();
+  lastFrame=startTime;
+  running=true;
+  paused=false;
+  gameEnded=false;
+  jumpPressed=false;
+
+  document.getElementById("overlay").classList.add("hidden");
+  updateHUD();
+  animationId=requestAnimationFrame(loop);
+}
+
+function loop(now){
+  if(!running)return;
+
+  const dt=Math.min(now-lastFrame,32);
+  lastFrame=now;
+  elapsed=now-startTime;
+
+  update(now,dt);
+  draw(now);
+  updateHUD();
+
+  if(running)animationId=requestAnimationFrame(loop);
+}
+
+function update(t,dt){
+  const frame=dt/16.67;
+  const oldY=player.y;
+  const oldBottom=oldY+player.h;
+  const oldPlatformId=player.platformId;
+
+  // 이동
+  player.vx=0;
+  if(keys.ArrowRight)player.vx=4.0;
+  if(keys.ArrowLeft)player.vx=-4.0;
+
+  // 움직이는 발판 위에 있을 때 발판의 이동을 반영
+  if(oldPlatformId!==null){
+    const p=platforms.find(item=>item.id===oldPlatformId);
+    if(p){
+      const pos=platformPosition(p,t);
+      player.x+=pos.x-player.previousPlatformX;
+    }
+  }
+
+  player.x+=player.vx*frame;
+  player.x=Math.max(0,player.x);
+
+  // 중력 및 점프
+  player.vy+=GRAVITY*frame;
+  player.y+=player.vy*frame;
+  player.grounded=false;
+  player.platformId=null;
+
+  // 발판 충돌
+  for(const p of platforms){
+    const pos=platformPosition(p,t);
+    const overlap=
+      player.x+player.w>pos.x &&
+      player.x<pos.x+p.width;
+
+    const newBottom=player.y+player.h;
+
+    if(
+      player.vy>=0 &&
+      overlap &&
+      oldBottom<=pos.y+7 &&
+      newBottom>=pos.y
+    ){
+      player.y=pos.y-player.h;
+      player.vy=0;
+      player.grounded=true;
+      player.platformId=p.id;
+      player.previousPlatformX=pos.x;
+    }
+  }
+
+  // 점프
+  if(jumpPressed && player.grounded){
+    player.vy=-11;
+    player.grounded=false;
+    player.platformId=null;
+    createBurst(player.x+player.w/2,player.y+player.h,"#65eaff",9);
+  }
+  jumpPressed=false;
+
+  // 장애물 충돌
+  if(player.invincible>0)player.invincible-=dt;
+
+  for(const x of obstacles){
+    const hit=
+      player.x+player.w>x &&
+      player.x<x+28 &&
+      player.y+player.h>300 &&
+      player.y<350;
+
+    if(hit && player.invincible<=0){
+      takeDamage();
+      break;
+    }
+  }
+
+  // 낙하
+  if(player.y>H+80){
+    takeDamage();
+  }
+
+  // 체크포인트
+  if(player.x>1400 && checkpoint===0){
+    checkpoint=1;
+    createBurst(player.x,player.y,"#65ff9a",25);
+  }
+
+  // 카메라 이동
+  if(player.x-camera>390){
+    camera=player.x-390;
+  }
+
+  // 진행도
+  if(player.x>=FINISH){
+    winGame();
+  }
+
+  // 파티클 업데이트
+  particles=particles.filter(p=>p.life>0);
+  for(const p of particles){
+    p.x+=p.vx*frame;
+    p.y+=p.vy*frame;
+    p.vy+=0.08*frame;
+    p.life-=dt;
+  }
+
+  score=Math.max(score,Math.floor(player.x/5));
+}
+
+function takeDamage(){
+  health--;
+  player.invincible=1300;
+  player.vy=-6;
+  player.platformId=null;
+  createBurst(player.x,player.y,"#ff5278",18);
+
+  if(health<=0){
+    endGame(false);
+  }else{
+    // 체크포인트 또는 시작 위치로 복귀
+    player.x=checkpoint?1450:65;
+    player.y=180;
+    player.vx=0;
+    player.vy=0;
+    camera=Math.max(0,player.x-390);
+  }
+}
+
+function createBurst(x,y,color,count){
+  for(let i=0;i<count;i++){
+    const a=Math.random()*Math.PI*2;
+    const speed=1+Math.random()*4;
+    particles.push({
+      x,y,
+      vx:Math.cos(a)*speed,
+      vy:Math.sin(a)*speed,
+      life:350+Math.random()*450,
+      maxLife:800,
+      color,
+      size:2+Math.random()*3
+    });
+  }
+}
+
+function drawBackground(t){
+  ctx.fillStyle="#09152b";
+  ctx.fillRect(0,0,W,H);
+
+  // 별
+  for(let i=0;i<75;i++){
+    const x=((i*137-camera*.12)%W+W)%W;
+    const y=(i*79)%H;
+    ctx.fillStyle=`rgba(130,205,255,${0.25+0.35*Math.sin(t*.002+i)})`;
+    ctx.fillRect(x,y,2,2);
+  }
+
+  // 격자
+  ctx.strokeStyle="#1a3151";
+  ctx.lineWidth=1;
+  for(let x=0;x<W;x+=45){
+    ctx.beginPath();
+    ctx.moveTo(x,0);
+    ctx.lineTo(x,H);
+    ctx.stroke();
+  }
+  for(let y=0;y<H;y+=45){
+    ctx.beginPath();
+    ctx.moveTo(0,y);
+    ctx.lineTo(W,y);
+    ctx.stroke();
+  }
+
+  // 배경 사인파
+  ctx.beginPath();
+  ctx.strokeStyle="#2768a5";
+  ctx.lineWidth=2;
+  for(let x=0;x<=W;x++){
+    const y=105+28*Math.sin(x*.025+t*.002);
+    if(x===0)ctx.moveTo(x,y);
+    else ctx.lineTo(x,y);
+  }
+  ctx.stroke();
+}
+
+function drawPlatforms(t){
+  for(const p of platforms){
+    const pos=platformPosition(p,t);
+    const x=pos.x-camera;
+    if(x<-150||x>W+50)continue;
+
+    ctx.save();
+    ctx.shadowBlur=18;
+    ctx.shadowColor="#21dfff";
+    ctx.fillStyle="#19c8ed";
+    ctx.fillRect(x,pos.y,p.width,p.height);
+    ctx.shadowBlur=0;
+    ctx.fillStyle="#a4f5ff";
+    ctx.fillRect(x,pos.y,p.width,3);
+    ctx.restore();
+  }
+}
+
+function drawObstacles(){
+  for(const x of obstacles){
+    const sx=x-camera;
+    if(sx<-50||sx>W+50)continue;
+
+    ctx.save();
+    ctx.shadowBlur=15;
+    ctx.shadowColor="#ff3e69";
+    ctx.fillStyle="#ff426d";
+    ctx.fillRect(sx,300,28,45);
+    ctx.fillStyle="#ffc1d0";
+    ctx.fillRect(sx+5,305,5,35);
+    ctx.restore();
+  }
+}
+
+function drawPlayer(t){
+  const x=player.x-camera;
+  const blink=player.invincible>0 && Math.floor(t/100)%2===0;
+  if(blink)return;
+
+  ctx.save();
+  ctx.shadowBlur=20;
+  ctx.shadowColor="#ffe36b";
+  ctx.fillStyle="#ffe36b";
+  ctx.fillRect(x,player.y,player.w,player.h);
+
+  ctx.shadowBlur=0;
+  ctx.fillStyle="#1b2941";
+  ctx.fillRect(x+15,player.y+8,5,5);
+
+  // 발광 테두리
+  ctx.strokeStyle="#fff3a7";
+  ctx.lineWidth=2;
+  ctx.strokeRect(x,player.y,player.w,player.h);
+  ctx.restore();
+}
+
+function drawFinish(){
+  const x=FINISH-camera;
+  ctx.fillStyle="#63ff9b";
+  ctx.shadowBlur=18;
+  ctx.shadowColor="#63ff9b";
+  ctx.fillRect(x,160,9,210);
+  ctx.shadowBlur=0;
+  ctx.fillStyle="#aaffc5";
+  ctx.font="bold 18px Arial";
+  ctx.fillText("GOAL",x-20,145);
+}
+
+function drawParticles(){
+  for(const p of particles){
+    ctx.globalAlpha=Math.max(0,p.life/p.maxLife);
+    ctx.fillStyle=p.color;
+    ctx.fillRect(p.x-camera,p.y,p.size,p.size);
+  }
+  ctx.globalAlpha=1;
+}
+
+function draw(t){
+  drawBackground(t);
+  drawPlatforms(t);
+  drawObstacles();
+  drawFinish();
+  drawPlayer(t);
+  drawParticles();
+
+  // 화면 상단 안내
+  ctx.fillStyle="#a9d5f2";
+  ctx.font="13px Arial";
+  ctx.fillText("WAVE ZONE  /  SIN & COS",18,25);
+}
+
+function updateHUD(){
+  document.getElementById("score").textContent=score;
+  document.getElementById("time").textContent=(elapsed/1000).toFixed(1)+"s";
+  document.getElementById("health").textContent=
+    "♥ ".repeat(health).trim()||"0";
+  document.getElementById("progress").textContent=
+    Math.min(100,Math.floor(player.x/FINISH*100))+"%";
+}
+
+function endGame(won){
+  running=false;
+  gameEnded=true;
+  document.getElementById("overlay").classList.remove("hidden");
+  document.getElementById("panelTitle").textContent=
+    won?"MISSION COMPLETE!":"GAME OVER";
+  document.getElementById("panelText").innerHTML=
+    won
+    ?`축하합니다! 결승점에 도착했습니다.<br>최종 점수: ${score}`
+    :`아쉽게 실패했습니다.<br>최종 점수: ${score}<br>다시 도전해 보세요!`;
+  document.getElementById("mainButton").textContent="PLAY AGAIN";
+}
+
+function winGame(){
+  score+=500;
+  endGame(true);
+}
+
+function togglePause(){
+  if(gameEnded||!player)return;
+
+  if(running){
+    running=false;
+    paused=true;
+    document.getElementById("overlay").classList.remove("hidden");
+    document.getElementById("panelTitle").textContent="PAUSED";
+    document.getElementById("panelText").textContent="잠시 쉬어 가세요!";
+    document.getElementById("mainButton").textContent="RESUME";
+  }else if(paused){
+    paused=false;
+    running=true;
+    startTime=performance.now()-elapsed;
+    lastFrame=performance.now();
+    document.getElementById("overlay").classList.add("hidden");
+    animationId=requestAnimationFrame(loop);
+  }
+}
+
+document.addEventListener("keydown",e=>{
+  if(["ArrowLeft","ArrowRight","Space"].includes(e.code)){
+    e.preventDefault();
+  }
+
+  if(e.code==="Space"&&!keys.Space){
+    jumpPressed=true;
+  }
+
+  keys[e.code]=true;
+
+  if(e.key==="p"||e.key==="P"){
+    togglePause();
+  }
+
+  if(e.key==="r"||e.key==="R"){
+    startGame();
+  }
+});
+
+document.addEventListener("keyup",e=>{
+  keys[e.code]=false;
+});
+
+document.getElementById("mainButton").addEventListener("click",()=>{
+  if(paused){
+    togglePause();
+  }else{
+    startGame();
+  }
+});
+
+// 최초 화면
+drawBackground(0);
+</script>
+</body>
+</html>

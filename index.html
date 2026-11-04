@@ -155,6 +155,8 @@
       user-select: none;
       position: relative;
     }
+    .card-banner svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+    .card-banner .status-badge { z-index: 1; }
     .card-banner.theme-blue   { background: linear-gradient(135deg, #dbeafe 0%, #93c5fd 100%); }
     .card-banner.theme-dark   { background: linear-gradient(135deg, #1f2937 0%, #0d1117 100%); }
     .card-banner.theme-purple { background: linear-gradient(135deg, #ede9fe 0%, #c4b5fd 100%); }
@@ -400,6 +402,85 @@
      *
      * ※ author 칸의 이름은 직접 바꿔주세요!
      */
+    /* 카드 썸네일 그림 (SVG: 이미지 파일 없이 코드로 그림) */
+    const THUMBS = {
+      "projectile-math": `
+<svg viewBox="0 0 360 140" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+  <defs><linearGradient id="tq-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#bfdbfe"/><stop offset="1" stop-color="#eff6ff"/></linearGradient></defs>
+  <rect width="360" height="140" fill="url(#tq-sky)"/>
+  <g stroke="#93c5fd" stroke-width="1" opacity=".5">
+    <line x1="60" y1="0" x2="60" y2="118"/><line x1="120" y1="0" x2="120" y2="118"/><line x1="180" y1="0" x2="180" y2="118"/><line x1="240" y1="0" x2="240" y2="118"/><line x1="300" y1="0" x2="300" y2="118"/>
+    <line x1="0" y1="38" x2="360" y2="38"/><line x1="0" y1="78" x2="360" y2="78"/>
+  </g>
+  <rect y="118" width="360" height="22" fill="#e7dcc4"/><line x1="0" y1="118" x2="360" y2="118" stroke="#65a30d" stroke-width="3"/>
+  <path d="M58 112 Q170 -40 282 112" fill="none" stroke="#2563eb" stroke-width="2.5" stroke-dasharray="7 6"/>
+  <rect x="150" y="70" width="12" height="48" rx="2" fill="#b45309"/>
+  <circle cx="300" cy="92" r="17" fill="#ef4444"/><circle cx="300" cy="92" r="11" fill="#fff"/><circle cx="300" cy="92" r="5" fill="#ef4444"/>
+  <circle cx="214" cy="52" r="6" fill="#1e293b"/>
+  <g transform="translate(52 116) rotate(-52)"><rect x="0" y="-8" width="44" height="16" rx="4" fill="#334155"/><rect x="36" y="-9.5" width="11" height="19" rx="3" fill="#1e293b"/></g>
+  <path d="M30 118 A22 18 0 0 1 74 118 Z" fill="#475569"/><circle cx="52" cy="116" r="6" fill="#1e293b"/>
+  <text x="16" y="26" font-family="Georgia,serif" font-style="italic" font-size="17" font-weight="700" fill="#1e3a8a">y = −ax² + bx</text>
+</svg>`,
+
+      "gyungwuesiuuu": `
+<svg viewBox="0 0 360 140" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+  <defs><linearGradient id="t31-bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2e1065"/><stop offset="1" stop-color="#1e1b4b"/></linearGradient></defs>
+  <rect width="360" height="140" fill="url(#t31-bg)"/>
+  <line x1="40" y1="96" x2="322" y2="96" stroke="#a78bfa" stroke-width="2" opacity=".6"/>
+  <g font-family="-apple-system,'Malgun Gothic',sans-serif" font-weight="800" text-anchor="middle">
+    <circle cx="52" cy="96" r="15" fill="#fcd34d"/><text x="52" y="101" font-size="14" fill="#3b0764">3</text>
+    <circle cx="118" cy="96" r="15" fill="#fcd34d"/><text x="118" y="101" font-size="14" fill="#3b0764">10</text>
+    <circle cx="184" cy="96" r="15" fill="#fcd34d"/><text x="184" y="101" font-size="14" fill="#3b0764">17</text>
+    <circle cx="250" cy="96" r="15" fill="#fcd34d"/><text x="250" y="101" font-size="14" fill="#3b0764">24</text>
+    <circle cx="316" cy="96" r="21" fill="#f472b6"/><text x="316" y="102" font-size="17" fill="#fff">31</text>
+    <g fill="#c4b5fd" font-size="12" font-weight="700"><text x="85" y="122">+7</text><text x="151" y="122">+7</text><text x="217" y="122">+7</text><text x="283" y="122">+7</text></g>
+  </g>
+  <g transform="translate(150 14) rotate(-10)"><rect width="34" height="48" rx="5" fill="#fff"/><text x="17" y="32" text-anchor="middle" font-family="sans-serif" font-size="20" font-weight="800" fill="#1e1b4b">4</text></g>
+  <g transform="translate(180 10)"><rect width="34" height="48" rx="5" fill="#fff"/><text x="17" y="32" text-anchor="middle" font-family="sans-serif" font-size="20" font-weight="800" fill="#1e1b4b">3</text></g>
+  <g transform="translate(212 14) rotate(10)"><rect width="34" height="48" rx="5" fill="#fff"/><text x="17" y="32" text-anchor="middle" font-family="sans-serif" font-size="20" font-weight="800" fill="#1e1b4b">6</text></g>
+</svg>`,
+
+      "miboon": `
+<svg viewBox="0 0 360 140" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+  <rect width="360" height="140" fill="#0b1020"/>
+  <g stroke="#1e293b" stroke-width="1"><line x1="0" y1="35" x2="360" y2="35"/><line x1="0" y1="70" x2="360" y2="70"/><line x1="0" y1="105" x2="360" y2="105"/><line x1="90" y1="0" x2="90" y2="140"/><line x1="180" y1="0" x2="180" y2="140"/><line x1="270" y1="0" x2="270" y2="140"/></g>
+  <path d="M0 30 Q180 190 360 30" fill="none" stroke="#a855f7" stroke-width="4"/>
+  <line x1="40" y1="34" x2="200" y2="122" stroke="#22d3ee" stroke-width="2.5" stroke-dasharray="6 5"/>
+  <circle cx="120" cy="78" r="5" fill="#fff"/>
+  <rect x="109" y="52" width="22" height="20" rx="5" fill="#fde047"/><circle cx="116" cy="61" r="2" fill="#0b1020"/><circle cx="124" cy="61" r="2" fill="#0b1020"/>
+  <rect x="250" y="76" width="16" height="26" fill="#ec4899"/>
+  <circle cx="214" cy="84" r="6" fill="#34d399"/><circle cx="310" cy="62" r="6" fill="#34d399"/>
+  <text x="228" y="28" font-family="Georgia,serif" font-style="italic" font-size="20" font-weight="700" fill="#22d3ee">f′(x)</text>
+</svg>`,
+
+      "wonbang": `
+<svg viewBox="0 0 360 140" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+  <rect width="360" height="140" fill="#fff1f2"/>
+  <g stroke="#fecdd3" stroke-width="1"><line x1="0" y1="35" x2="360" y2="35"/><line x1="0" y1="105" x2="360" y2="105"/><line x1="90" y1="0" x2="90" y2="140"/><line x1="270" y1="0" x2="270" y2="140"/></g>
+  <line x1="0" y1="70" x2="360" y2="70" stroke="#fb7185" stroke-width="1.5"/><line x1="180" y1="0" x2="180" y2="140" stroke="#fb7185" stroke-width="1.5"/>
+  <circle cx="180" cy="70" r="40" fill="none" stroke="#f43f5e" stroke-width="2" stroke-dasharray="5 5" opacity=".55"/>
+  <circle cx="262" cy="48" r="40" fill="rgba(244,63,94,.12)" stroke="#e11d48" stroke-width="3"/>
+  <line x1="180" y1="70" x2="254" y2="51" stroke="#be123c" stroke-width="2.5"/>
+  <path d="M262 48 l-13 -1 l6 10 z" fill="#be123c"/>
+  <circle cx="262" cy="48" r="4" fill="#be123c"/><text x="268" y="64" font-family="Georgia,serif" font-style="italic" font-size="14" font-weight="700" fill="#9f1239">(a, b)</text>
+  <text x="14" y="128" font-family="Georgia,serif" font-style="italic" font-size="16" font-weight="700" fill="#9f1239">(x−a)² + (y−b)² = r²</text>
+</svg>`,
+
+      "samgakhamsiuuu": `
+<svg viewBox="0 0 360 140" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+  <defs><linearGradient id="tsin-bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#082f49"/><stop offset="1" stop-color="#020617"/></linearGradient></defs>
+  <rect width="360" height="140" fill="url(#tsin-bg)"/>
+  <line x1="0" y1="76" x2="360" y2="76" stroke="#155e75" stroke-width="1.5"/>
+  <path d="M0 76 C30 26 60 26 90 76 S150 126 180 76 S240 26 270 76 S330 126 360 76" fill="none" stroke="#22d3ee" stroke-width="3"/>
+  <rect x="30" y="40" width="40" height="8" rx="3" fill="#67e8f9"/>
+  <rect x="160" y="104" width="40" height="8" rx="3" fill="#67e8f9"/>
+  <rect x="250" y="40" width="40" height="8" rx="3" fill="#67e8f9"/>
+  <rect x="263" y="22" width="14" height="18" rx="3" fill="#fde047"/>
+  <polygon points="118,112 128,94 138,112" fill="#f43f5e"/>
+  <text x="200" y="128" font-family="Georgia,serif" font-style="italic" font-size="16" font-weight="700" fill="#a5f3fc">y = A sin(ωt) + b</text>
+</svg>`
+    };
+
     const GAMES_DATA = [
       {
         id: "projectile-math",
@@ -519,7 +600,7 @@
         if (game.status === "soon") badge = `<span class="status-badge">준비 중</span>`;
 
         card.innerHTML = `
-          <div class="card-banner ${game.theme || ""}">${game.icon}${badge}</div>
+          <div class="card-banner ${game.theme || ""}">${THUMBS[game.id] || game.icon}${badge}</div>
           <div class="card-content">
             <div class="card-header">
               <h3 class="card-title">${game.title}</h3>

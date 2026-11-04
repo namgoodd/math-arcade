@@ -477,10 +477,6 @@
     let currentCategory = "all";
     let searchQuery = "";
 
-    // 등록된 게임 수 표시
-    const playableCount = GAMES_DATA.filter(g => g.status !== "soon").length;
-    headerStats.innerHTML = `플레이 가능한 게임 <strong>${playableCount}</strong>개`;
-
     // 상태별 버튼 HTML
     function buildActions(game) {
       if (game.status === "ready") {
